@@ -11,7 +11,7 @@ Add all files of the repo to your Unity project's Editor Folder: {$ProjectFolder
 
 XUPorter require Unity 3.5 or higher and Xcode 4 to work properly.
 
-## Useage
+## Usage
 After the Unity's building phase, OnPostProcessBuild in XCodePostProcess.cs will be called and Xcode project file will be modified. See /Mods folder. All .projmods (which is in JSON) will be treated as Xcode patch setting files. XUPorter will find and read all projmods files in /Assets and modify Xcode project file as settings.
 
 * group：The group name in Xcode to which files and folders will added by this projmods file
