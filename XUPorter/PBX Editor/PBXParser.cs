@@ -177,7 +177,9 @@ namespace UnityEditor.XCodeEditor
 
 					case DICTIONARY_ASSIGN_TOKEN:
 						valueObject = ParseValue();
-						dictionary.Add( keyString, valueObject );
+						if (!dictionary.ContainsKey(keyString)) {
+							dictionary.Add( keyString, valueObject );	
+						}
 						break;
 
 					default:
