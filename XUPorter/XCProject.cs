@@ -543,6 +543,33 @@ namespace UnityEditor.XCodeEditor
 			_objects = consolidated;
 			consolidated = null;
 		}
+
+		public void Backup()
+		{
+			string backupPath = Path.Combine( this.filePath, "project.backup.pbxproj" );
+			
+			// Delete previous backup file
+			if( File.Exists( backupPath ) )
+				File.Delete( backupPath );
+			
+			// Backup original pbxproj file first
+			File.Copy( System.IO.Path.Combine( this.filePath, "project.pbxproj" ), backupPath );
+		}
+
+		private void DeleteExisting(string path)
+		{
+            // Delete old project file
+            if( File.Exists( path ))
+                File.Delete( path );
+		}
+
+		private void CreateNewProject(PBXDictionary result, string path) 
+		{
+			PBXParser parser = new PBXParser();
+			StreamWriter saveFile = File.CreateText( path );
+			saveFile.Write( parser.Encode( result, false ) );
+			saveFile.Close();
+		}
 		
 		/// <summary>
 		/// Saves a project after editing.
@@ -559,25 +586,13 @@ namespace UnityEditor.XCodeEditor
 			
 			result.Add( "rootObject", _rootObjectKey );
 			
-			string backupPath = Path.Combine( this.filePath, "project.backup.pbxproj" );
-            string projectPath = Path.Combine( this.filePath, "project.pbxproj" );
-    		
-			// Delete previous backup file
-			if( File.Exists( backupPath ) )
-				File.Delete( backupPath );
-			
-			// Backup original pbxproj file first
-			File.Copy( projectPath, backupPath );
-            
-            // Delete project file
-            if( File.Exists( projectPath ))
-                File.Delete( projectPath );
-			
+			string projectPath = Path.Combine( this.filePath, "project.pbxproj" );
+
+			// Delete old project file, in case of an IOException 'Sharing violation on path Error'
+			DeleteExisting(projectPath);
+
 			// Parse result object directly into file
-			PBXParser parser = new PBXParser();
-			StreamWriter saveFile = File.CreateText( projectPath );
-			saveFile.Write( parser.Encode( result, false ) );
-			saveFile.Close();
+			CreateNewProject(result,projectPath);
 		}
 		
 		/**
