@@ -544,18 +544,6 @@ namespace UnityEditor.XCodeEditor
 			consolidated = null;
 		}
 		
-		public void Backup()
-		{
-			string backupPath = Path.Combine( this.filePath, "project.backup.pbxproj" );
-			
-			// Delete previous backup file
-			if( File.Exists( backupPath ) )
-				File.Delete( backupPath );
-			
-			// Backup original pbxproj file first
-			File.Copy( System.IO.Path.Combine( this.filePath, "project.pbxproj" ), backupPath );
-		}
-		
 		/// <summary>
 		/// Saves a project after editing.
 		/// </summary>
@@ -571,11 +559,23 @@ namespace UnityEditor.XCodeEditor
 			
 			result.Add( "rootObject", _rootObjectKey );
 			
-			Backup();
+			string backupPath = Path.Combine( this.filePath, "project.backup.pbxproj" );
+            string projectPath = Path.Combine( this.filePath, "project.pbxproj" );
+    		
+			// Delete previous backup file
+			if( File.Exists( backupPath ) )
+				File.Delete( backupPath );
+			
+			// Backup original pbxproj file first
+			File.Copy( projectPath, backupPath );
+            
+            // Delete project file
+            if( File.Exists( projectPath ))
+                File.Delete( projectPath );
 			
 			// Parse result object directly into file
 			PBXParser parser = new PBXParser();
-			StreamWriter saveFile = File.CreateText( System.IO.Path.Combine( this.filePath, "project.pbxproj" ) );
+			StreamWriter saveFile = File.CreateText( projectPath );
 			saveFile.Write( parser.Encode( result, false ) );
 			saveFile.Close();
 		}
