@@ -66,6 +66,12 @@ namespace UnityEditor.XCodeEditor
 				return (ArrayList)_datastore["excludes"];
 			}
 		}
+
+		public ArrayList linker_flags {
+			get {
+				return (ArrayList)_datastore["linker_flags"];
+			}
+		}
 		
 		public XCMod( string filename )
 		{	

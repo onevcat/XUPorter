@@ -21,6 +21,7 @@ After the Unity's building phase, OnPostProcessBuild in XCodePostProcess.cs will
 * files：Files which should be added
 * folders：Folders which should be added. All file and folders(recursively) will be added
 * excludes：Regular expression pattern. Matched files will not be added.
+* linker_flags: Linker flags which should be added, e.g. -ObjC
 
 ## LICENSE
 This code is distributed under the terms and conditions of the MIT license.
