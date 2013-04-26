@@ -240,6 +240,20 @@ namespace UnityEditor.XCodeEditor
 			modified = true;
 			return modified;	
 		}
+
+		public bool AddOtherLinkerFlags( string flag )
+		{
+			return AddOtherLinkerFlags( new PBXList( flag ) ); 
+		}
+		
+		public bool AddOtherLinkerFlags( PBXList flags )
+		{
+			foreach( KeyValuePair<string, XCBuildConfiguration> buildConfig in buildConfigurations ) {
+				buildConfig.Value.AddOtherLinkerFlags( flags );
+			}
+			modified = true;
+			return modified;	
+		}
 		
 		public bool AddHeaderSearchPaths( string path )
 		{
@@ -517,6 +531,11 @@ namespace UnityEditor.XCodeEditor
 			foreach( string headerpath in mod.headerpaths ) {
 				string absoluteHeaderPath = System.IO.Path.Combine( mod.path, headerpath );
 				this.AddHeaderSearchPaths( absoluteHeaderPath );
+			}
+
+			Debug.Log( "Adding linker flags..." );
+			foreach( string flag in mod.linker_flags ) {
+				this.AddOtherLinkerFlags( flag );
 			}
 			
 			this.Consolidate();
