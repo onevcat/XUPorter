@@ -63,9 +63,27 @@ namespace UnityEditor.XCodeEditor
 			builder.Append( "".PadLeft( deep, '\t' ) );
 		}
 
-		private void Endline( StringBuilder builder )
+		private void Endline( StringBuilder builder, bool useSpace = false )
 		{
-			builder.Append( "\n" );
+			builder.Append( useSpace ? " " : "\n" );
+		}
+
+		private string marker = null;
+		private void MarkSection(StringBuilder builder, string name)
+		{
+			if( marker == null && name == null ) return;
+
+			if( marker != null && name != marker )
+			{
+				builder.Append( String.Format( "/* End {0} section */\n", marker ) );
+			}
+
+			if( name != null && name != marker )
+			{
+				builder.Append( String.Format( "\n/* Begin {0} section */\n", name ) );
+			}
+
+			marker = name;
 		}
 
 		#endregion
@@ -305,17 +323,47 @@ namespace UnityEditor.XCodeEditor
 			builder.Append( DICTIONARY_BEGIN_TOKEN );
 			if( readable && dictionary.Count > 0 ) Endline( builder );
 
-			foreach( KeyValuePair<string, object> pair in dictionary ) {
+			foreach( KeyValuePair<string, object> pair in dictionary )
+			{
+				// output section banner if necessary
+				if( readable && indent == 1 ) MarkSection( builder, pair.Value.GetType().Name );
+
+				// indent KEY
 				if( readable ) Indent( builder, indent + 1 );
 
+				// KEY
 				SerializeString( pair.Key, builder );
-				builder.Append( " " + DICTIONARY_ASSIGN_TOKEN + " " );
-				SerializeValue( pair.Value, builder, readable, indent + 1 );
+
+				// output file name
+				if(readable && pair.Value is PBXBuildFile) {
+					PBXFileReference fileRef = (PBXFileReference)dictionary[ ( (PBXBuildFile)pair.Value ).fileRef ];
+					if( fileRef != null )
+						builder.Append( String.Format( " /* {0} */", fileRef.name != null ? fileRef.name : fileRef.path ) );
+				}
+
+				// =
+				if(readable)
+					builder.Append( " " + DICTIONARY_ASSIGN_TOKEN + " " );
+				else
+					builder.Append( DICTIONARY_ASSIGN_TOKEN );
+
+				// VALUE
+				// do not pretty-print PBXBuildFile or PBXFileReference as Xcode does
+				SerializeValue( pair.Value, builder, ( readable &&
+					( pair.Value.GetType() != typeof( PBXBuildFile ) ) &&
+					( pair.Value.GetType() != typeof( PBXFileReference ) )
+				), indent + 1 );
+
+				// end statement
 				builder.Append( DICTIONARY_ITEM_DELIMITER_TOKEN );
 
-				if ( readable ) Endline( builder );
+				if( readable ) Endline( builder );
 			}
 
+			// output last section banner
+			if( readable && indent == 1 ) MarkSection( builder, null );
+
+			// indent }
 			if( readable && dictionary.Count > 0 ) Indent( builder, indent );
 
 			builder.Append( DICTIONARY_END_TOKEN );
