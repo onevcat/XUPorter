@@ -21,6 +21,13 @@ namespace UnityEditor.XCodeEditor
 		public PBXBuildFile( string guid, PBXDictionary dictionary ) : base ( guid, dictionary )
 		{
 		}
+
+		public string fileRef
+		{
+			get {
+				return (string)_data[ FILE_REF_KEY ];
+			}
+		}
 		
 		public bool SetWeakLink( bool weak = false )
 		{
