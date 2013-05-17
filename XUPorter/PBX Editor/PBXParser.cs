@@ -33,7 +33,7 @@ namespace UnityEditor.XCodeEditor
 
 		private char[] data;
 		private int index;
-	
+
 		public PBXDictionary Decode( string data )
 		{
 			if( !data.StartsWith( PBX_HEADER_TOKEN ) ) {
@@ -44,7 +44,7 @@ namespace UnityEditor.XCodeEditor
 			data = data.Substring( 13 );
 			this.data = data.ToCharArray();
 			index = 0;
-			
+
 			return (PBXDictionary)ParseValue();
 		}
 
@@ -56,6 +56,38 @@ namespace UnityEditor.XCodeEditor
 			return ( success ? builder.ToString() : null );
 		}
 
+		#region Pretty Print
+
+		private void Indent( StringBuilder builder, int deep )
+		{
+			builder.Append( "".PadLeft( deep, '\t' ) );
+		}
+
+		private void Endline( StringBuilder builder, bool useSpace = false )
+		{
+			builder.Append( useSpace ? " " : "\n" );
+		}
+
+		private string marker = null;
+		private void MarkSection(StringBuilder builder, string name)
+		{
+			if( marker == null && name == null ) return;
+
+			if( marker != null && name != marker )
+			{
+				builder.Append( String.Format( "/* End {0} section */\n", marker ) );
+			}
+
+			if( name != null && name != marker )
+			{
+				builder.Append( String.Format( "\n/* Begin {0} section */\n", name ) );
+			}
+
+			marker = name;
+		}
+
+		#endregion
+
 		#region Move
 
 		private char NextToken()
@@ -63,7 +95,7 @@ namespace UnityEditor.XCodeEditor
 			SkipWhitespaces();
 			return StepForeward();
 		}
-		
+
 		private string Peek( int step = 1 )
 		{
 			string sneak = string.Empty;
@@ -115,13 +147,13 @@ namespace UnityEditor.XCodeEditor
 			}
 			return true;
 		}
-		
+
 		private char StepForeward( int step = 1 )
 		{
 			index = Math.Min( data.Length, index + step );
 			return data[ index ];
 		}
-		
+
 		private char StepBackward( int step = 1 )
 		{
 			index = Math.Max( 0, index - step );
@@ -178,7 +210,7 @@ namespace UnityEditor.XCodeEditor
 					case DICTIONARY_ASSIGN_TOKEN:
 						valueObject = ParseValue();
 						if (!dictionary.ContainsKey(keyString)) {
-							dictionary.Add( keyString, valueObject );	
+							dictionary.Add( keyString, valueObject );
 						}
 						break;
 
@@ -234,7 +266,7 @@ namespace UnityEditor.XCodeEditor
 		private object ParseEntity()
 		{
 			string word = string.Empty;
-			
+
 			while( !Regex.IsMatch( Peek(), @"[;,\s=]" ) ) {
 				word += StepForeward();
 			}
@@ -242,29 +274,29 @@ namespace UnityEditor.XCodeEditor
 			if( word.Length != 24 && Regex.IsMatch( word, @"^\d+$" ) ) {
 				return Int32.Parse( word );
 			}
-			
+
 			return word;
 		}
 
 		#endregion
 		#region Serialize
 
-		private bool SerializeValue( object value, StringBuilder builder, bool readable = false )
+		private bool SerializeValue( object value, StringBuilder builder, bool readable = false, int indent = 0 )
 		{
 			if( value == null ) {
 				builder.Append( "null" );
 			}
 			else if( value is PBXObject ) {
-				SerializeDictionary( ((PBXObject)value).data, builder, readable );
+				SerializeDictionary( ((PBXObject)value).data, builder, readable, indent );
 			}
 			else if( value is Dictionary<string, object> ) {
-				SerializeDictionary( (Dictionary<string, object>)value, builder, readable );
+				SerializeDictionary( (Dictionary<string, object>)value, builder, readable, indent );
 			}
 			else if( value.GetType().IsArray ) {
-				SerializeArray( new ArrayList( (ICollection)value ), builder, readable );
+				SerializeArray( new ArrayList( (ICollection)value ), builder, readable, indent );
 			}
 			else if( value is ArrayList ) {
-				SerializeArray( (ArrayList)value, builder, readable );
+				SerializeArray( (ArrayList)value, builder, readable, indent );
 			}
 			else if( value is string ) {
 				SerializeString( (string)value, builder, readable );
@@ -282,42 +314,81 @@ namespace UnityEditor.XCodeEditor
 				Debug.LogWarning( "Error: unknown object of type " + value.GetType().Name );
 				return false;
 			}
-	
+
 			return true;
 		}
 
-		private bool SerializeDictionary( Dictionary<string, object> dictionary, StringBuilder builder, bool readable = false )
+		private bool SerializeDictionary( Dictionary<string, object> dictionary, StringBuilder builder, bool readable = false, int indent = 0 )
 		{
 			builder.Append( DICTIONARY_BEGIN_TOKEN );
+			if( readable && dictionary.Count > 0 ) Endline( builder );
 
-			foreach( KeyValuePair<string, object> pair in dictionary ) {
+			foreach( KeyValuePair<string, object> pair in dictionary )
+			{
+				// output section banner if necessary
+				if( readable && indent == 1 ) MarkSection( builder, pair.Value.GetType().Name );
+
+				// indent KEY
+				if( readable ) Indent( builder, indent + 1 );
+
+				// KEY
 				SerializeString( pair.Key, builder );
-				builder.Append( DICTIONARY_ASSIGN_TOKEN );
-				SerializeValue( pair.Value, builder );
+
+				// output file name
+				if(readable && pair.Value is PBXBuildFile) {
+					PBXFileReference fileRef = (PBXFileReference)dictionary[ ( (PBXBuildFile)pair.Value ).fileRef ];
+					if( fileRef != null )
+						builder.Append( String.Format( " /* {0} */", fileRef.name != null ? fileRef.name : fileRef.path ) );
+				}
+
+				// =
+				if(readable)
+					builder.Append( " " + DICTIONARY_ASSIGN_TOKEN + " " );
+				else
+					builder.Append( DICTIONARY_ASSIGN_TOKEN );
+
+				// VALUE
+				// do not pretty-print PBXBuildFile or PBXFileReference as Xcode does
+				SerializeValue( pair.Value, builder, ( readable &&
+					( pair.Value.GetType() != typeof( PBXBuildFile ) ) &&
+					( pair.Value.GetType() != typeof( PBXFileReference ) )
+				), indent + 1 );
+
+				// end statement
 				builder.Append( DICTIONARY_ITEM_DELIMITER_TOKEN );
+
+				if( readable ) Endline( builder );
 			}
 
+			// output last section banner
+			if( readable && indent == 1 ) MarkSection( builder, null );
+
+			// indent }
+			if( readable && dictionary.Count > 0 ) Indent( builder, indent );
+
 			builder.Append( DICTIONARY_END_TOKEN );
+
 			return true;
 		}
 
-		private bool SerializeArray( ArrayList anArray, StringBuilder builder, bool readable = false )
+		private bool SerializeArray( ArrayList anArray, StringBuilder builder, bool readable = false, int indent = 0 )
 		{
 			builder.Append( ARRAY_BEGIN_TOKEN );
 
 			for( int i = 0; i < anArray.Count; i++ )
 			{
 				object value = anArray[i];
-	
-				if( !SerializeValue( value, builder ) )
+
+				if( !SerializeValue( value, builder, readable, indent + 1 ) )
 				{
 					return false;
 				}
 
 				builder.Append( ARRAY_ITEM_DELIMITER_TOKEN );
 			}
-	
+
 			builder.Append( ARRAY_END_TOKEN );
+
 			return true;
 		}
 
