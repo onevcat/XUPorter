@@ -586,7 +586,7 @@ namespace UnityEditor.XCodeEditor
 		{
 			PBXParser parser = new PBXParser();
 			StreamWriter saveFile = File.CreateText( path );
-			saveFile.Write( parser.Encode( result, false ) );
+			saveFile.Write( parser.Encode( result, true ) );
 			saveFile.Close();
 		}
 		
@@ -598,7 +598,7 @@ namespace UnityEditor.XCodeEditor
 			PBXDictionary result = new PBXDictionary();
 			result.Add( "archiveVersion", 1 );
 			result.Add( "classes", new PBXDictionary() );
-			result.Add( "objectVersion", 45 );
+			result.Add( "objectVersion", 46 );
 			
 			Consolidate();
 			result.Add( "objects", _objects );
