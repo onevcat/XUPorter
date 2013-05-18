@@ -7,5 +7,6 @@
                 "iOS/GameCenter/GKWrapper.h"
                 ],
     "folders": [],    
-    "excludes": ["^.*.meta$", "^.*.mdown$", "^.*.pdf$"]
+    "excludes": ["^.*.meta$", "^.*.mdown$", "^.*.pdf$"],
+    "linker_flags": []
 }
