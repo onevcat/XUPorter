@@ -299,10 +299,10 @@ namespace UnityEditor.XCodeEditor
 				SerializeArray( (ArrayList)value, builder, readable, indent );
 			}
 			else if( value is string ) {
-				SerializeString( (string)value, builder, readable );
+				SerializeString( (string)value, builder, false, readable );
 			}
 			else if( value is Char ) {
-				SerializeString( Convert.ToString( (char)value ), builder, readable );
+				SerializeString( Convert.ToString( (char)value ), builder, false, readable );
 			}
 			else if( value is bool ) {
 				builder.Append( Convert.ToInt32( value ).ToString() );
@@ -332,7 +332,7 @@ namespace UnityEditor.XCodeEditor
 				if( readable ) Indent( builder, indent + 1 );
 
 				// KEY
-				SerializeString( pair.Key, builder );
+				SerializeString( pair.Key, builder, false, readable );
 
 				// output file name
 				if(readable && pair.Value is PBXBuildFile) {
@@ -374,10 +374,13 @@ namespace UnityEditor.XCodeEditor
 		private bool SerializeArray( ArrayList anArray, StringBuilder builder, bool readable = false, int indent = 0 )
 		{
 			builder.Append( ARRAY_BEGIN_TOKEN );
+			if( readable ) Endline( builder );
 
 			for( int i = 0; i < anArray.Count; i++ )
 			{
 				object value = anArray[i];
+
+				if( readable ) Indent( builder, indent + 1 );
 
 				if( !SerializeValue( value, builder, readable, indent + 1 ) )
 				{
@@ -385,8 +388,10 @@ namespace UnityEditor.XCodeEditor
 				}
 
 				builder.Append( ARRAY_ITEM_DELIMITER_TOKEN );
+				if( readable ) Endline( builder );
 			}
 
+			if( readable ) Indent( builder, indent );
 			builder.Append( ARRAY_END_TOKEN );
 
 			return true;
