@@ -548,17 +548,17 @@ namespace UnityEditor.XCodeEditor
 		{
 			PBXDictionary consolidated = new PBXDictionary();
 			consolidated.Append<PBXBuildFile>( this.buildFiles );
-			consolidated.Append<PBXGroup>( this.groups );
+			consolidated.Append<PBXCopyFilesBuildPhase>( this.copyBuildPhases );
 			consolidated.Append<PBXFileReference>( this.fileReferences );
-			consolidated.Append<PBXNativeTarget>( this.nativeTargets );
 			consolidated.Append<PBXFrameworksBuildPhase>( this.frameworkBuildPhases );
+			consolidated.Append<PBXGroup>( this.groups );
+			consolidated.Append<PBXNativeTarget>( this.nativeTargets );
+			consolidated.Add( project.guid, project.data );
 			consolidated.Append<PBXResourcesBuildPhase>( this.resourcesBuildPhases );
 			consolidated.Append<PBXShellScriptBuildPhase>( this.shellScriptBuildPhases );
 			consolidated.Append<PBXSourcesBuildPhase>( this.sourcesBuildPhases );
-			consolidated.Append<PBXCopyFilesBuildPhase>( this.copyBuildPhases );
 			consolidated.Append<XCBuildConfiguration>( this.buildConfigurations );
 			consolidated.Append<XCConfigurationList>( this.configurationLists );
-			consolidated.Add( project.guid, project.data );
 			_objects = consolidated;
 			consolidated = null;
 		}
