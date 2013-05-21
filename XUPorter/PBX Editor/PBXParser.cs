@@ -400,7 +400,8 @@ namespace UnityEditor.XCodeEditor
 		private bool SerializeString( string aString, StringBuilder builder, bool useQuotes = false, bool readable = false )
 		{
 			// Is a GUID?
-			if( Regex.IsMatch( aString, @"^[A-F0-9]{24}$" ) ) {
+			// Note: Unity3d generates mixed-case GUIDs, Xcode use uppercase GUIDs only.
+			if( Regex.IsMatch( aString, @"^[A-Fa-f0-9]{24}$" ) ) {
 				builder.Append( aString );
 				return true;
 			}
