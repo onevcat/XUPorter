@@ -94,7 +94,8 @@ namespace UnityEditor.XCodeEditor
 					return (string)obj.data[ "name" ];
 			}
 
-			return "UNRESOLVED GUID:" + guid;
+			//return "UNRESOLVED GUID:" + guid;
+			return null;
 		}
 
 		public string ResolveBuildPhaseNameForFile( string guid )
@@ -553,7 +554,9 @@ namespace UnityEditor.XCodeEditor
 				return true;
 			}
 
-			if( !Regex.IsMatch( aString, @"^[A-Za-z0-9_.]+$" ) ) {
+			// FIX ME: Original regexp was: @"^[A-Za-z0-9_.]+$", we use modified regexp with '/-' allowed
+			//		   to workaround Unity bug when all PNGs had "Libraries/" (group name) added to their paths after append
+			if( !Regex.IsMatch( aString, @"^[A-Za-z0-9_./-]+$" ) ) {
 				useQuotes = true;
 			}
 
