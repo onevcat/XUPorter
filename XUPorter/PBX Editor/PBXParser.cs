@@ -10,39 +10,121 @@ namespace UnityEditor.XCodeEditor
 {
 	public class PBXResolver
 	{
-		PBXDictionary objects;
+		private class PBXResolverReverseIndex : Dictionary<string, string> {}
+
+		private PBXDictionary objects;
+		private string rootObject;
+		private PBXResolverReverseIndex index;
 
 		public PBXResolver( PBXDictionary pbxData ) {
 			this.objects = (PBXDictionary)pbxData[ "objects" ];
+			this.index = new PBXResolverReverseIndex();
+			this.rootObject = (string)pbxData[ "rootObject" ];
+			BuildReverseIndex();
 		}
 
-		public string GetFileName( string guid )
+		private void BuildReverseIndex()
+		{
+			foreach( KeyValuePair<string, object> pair in this.objects )
+			{
+				if( pair.Value is PBXBuildPhase )
+				{
+					foreach( string guid in ((PBXBuildPhase)pair.Value).files )
+					{
+						index[ guid ] = pair.Key;
+					}
+				}
+				else if( pair.Value is PBXGroup )
+				{
+					foreach( string guid in ((PBXGroup)pair.Value).children )
+					{
+						index[ guid ] = pair.Key;
+					}
+				}
+			}
+		}
+
+		public string ResolveName( string guid )
 		{
 			object entity = this.objects[ guid ];
 
 			if( entity is PBXBuildFile )
 			{
-				return GetFileName( ((PBXBuildFile)entity).fileRef );
+				return ResolveName( ((PBXBuildFile)entity).fileRef );
 			}
 			else if( entity is PBXFileReference )
 			{
-				// Why .name can be empty?
 				PBXFileReference casted = (PBXFileReference)entity;
 				return casted.name != null ? casted.name : casted.path;
 			}
 			else if( entity is PBXGroup )
 			{
-				return ((PBXGroup)entity).name;
+				PBXGroup casted = (PBXGroup)entity;
+				return casted.name != null ? casted.name : casted.path;
+			}
+			else if( entity is PBXProject || guid == this.rootObject )
+			{
+				return "Project object";
+			}
+			else if( entity is PBXFrameworksBuildPhase )
+			{
+				return "Frameworks";
+			}
+			else if( entity is PBXResourcesBuildPhase )
+			{
+				return "Resources";
+			}
+			else if( entity is PBXShellScriptBuildPhase )
+			{
+				return "ShellScript";
+			}
+			else if( entity is PBXSourcesBuildPhase )
+			{
+				return "Sources";
+			}
+			else if( entity is PBXCopyFilesBuildPhase )
+			{
+				return "CopyFiles";
 			}
 			else if( entity is PBXObject )
 			{
 				PBXObject obj = (PBXObject)entity;
 
-				if( obj.ContainsKey( "name" ) ) return (string)obj.data[ "name" ];
+				if( obj.ContainsKey( "name" ) )
+					return (string)obj.data[ "name" ];
+			}
+
+			return "UNRESOLVED GUID:" + guid;
+		}
+
+		public string ResolveBuildPhaseNameForFile( string guid )
+		{
+			if( this.objects.ContainsKey( guid ) )
+			{
+				object obj = this.objects[ guid ];
+
+				if( obj is PBXObject )
+				{
+					PBXObject entity = (PBXObject)obj;
+
+					if( this.index.ContainsKey( entity.guid ) )
+					{
+						string parent_guid = this.index[ entity.guid ];
+
+						if( this.objects.ContainsKey( parent_guid ) )
+						{
+							object parent = this.objects[ parent_guid ];
+
+							if( parent is PBXBuildPhase )
+								return ResolveName( ((PBXBuildPhase)parent).guid );
+						}
+					}
+				}
 			}
 
 			return null;
 		}
+
 	}
 
 	public class PBXParser
@@ -94,6 +176,9 @@ namespace UnityEditor.XCodeEditor
 			bool success = SerializeValue( pbxData, builder, readable );
 			this.resolver = null;
 
+			// Xcode adds newline at the end of file
+			builder.Append( "\n" );
+
 			return ( success ? builder.ToString() : null );
 		}
 
@@ -110,7 +195,7 @@ namespace UnityEditor.XCodeEditor
 		}
 
 		private string marker = null;
-		private void MarkSection(StringBuilder builder, string name)
+		private void MarkSection( StringBuilder builder, string name )
 		{
 			if( marker == null && name == null ) return;
 
@@ -125,6 +210,25 @@ namespace UnityEditor.XCodeEditor
 			}
 
 			marker = name;
+		}
+
+		private bool GUIDComment( string guid, StringBuilder builder )
+		{
+			string filename = this.resolver.ResolveName( guid );
+			string location = this.resolver.ResolveBuildPhaseNameForFile( guid );
+
+			//Debug.Log( "RESOLVE " + guid + ": " + filename + " in " + location );
+
+			if( filename != null ) {
+				if( location != null )
+					builder.Append( String.Format( " /* {0} in {1} */", filename, location ) );
+				else
+					builder.Append( String.Format( " /* {0} */", filename) );
+
+				return true;
+			}
+
+			return false;
 		}
 
 		#endregion
@@ -376,10 +480,8 @@ namespace UnityEditor.XCodeEditor
 				SerializeString( pair.Key, builder, false, readable );
 
 				// =
-				if(readable)
-					builder.Append( " " + DICTIONARY_ASSIGN_TOKEN + " " );
-				else
-					builder.Append( DICTIONARY_ASSIGN_TOKEN );
+				// FIX ME: cannot resolve mode because readable = false for PBXBuildFile/Reference sections
+				builder.Append( String.Format( " {0} ", DICTIONARY_ASSIGN_TOKEN ) );
 
 				// VALUE
 				// do not pretty-print PBXBuildFile or PBXFileReference as Xcode does
@@ -391,7 +493,8 @@ namespace UnityEditor.XCodeEditor
 				// end statement
 				builder.Append( DICTIONARY_ITEM_DELIMITER_TOKEN );
 
-				if( readable ) Endline( builder );
+				// FIX ME: negative readable in favor of nice output for PBXBuildFile/Reference sections
+				Endline( builder, !readable );
 			}
 
 			// output last section banner
@@ -422,7 +525,9 @@ namespace UnityEditor.XCodeEditor
 				}
 
 				builder.Append( ARRAY_ITEM_DELIMITER_TOKEN );
-				if( readable ) Endline( builder );
+
+				// FIX ME: negative readable in favor of nice output for PBXBuildFile/Reference sections
+				Endline( builder, !readable );
 			}
 
 			if( readable ) Indent( builder, indent );
@@ -431,31 +536,13 @@ namespace UnityEditor.XCodeEditor
 			return true;
 		}
 
-		private bool AddFilenameCommentIfGUID( object value, StringBuilder builder )
-		{
-			// Is a GUID?
-			// Note: Unity3d generates mixed-case GUIDs, Xcode use uppercase GUIDs only.
-			if( value is string && Regex.IsMatch( (string)value, @"^[A-Fa-f0-9]{24}$" ) )
-			{
-				string filename = this.resolver.GetFileName( (string)value );
-				Debug.Log( "RESOLVER for " + (string)value + ": " + filename );
-
-				if( filename != null ) {
-					builder.Append( " /* " + filename + " */" );
-					return true;
-				}
-			}
-
-			return false;
-		}
-
 		private bool SerializeString( string aString, StringBuilder builder, bool useQuotes = false, bool readable = false )
 		{
 			// Is a GUID?
 			// Note: Unity3d generates mixed-case GUIDs, Xcode use uppercase GUIDs only.
 			if( Regex.IsMatch( aString, @"^[A-Fa-f0-9]{24}$" ) ) {
 				builder.Append( aString );
-				AddFilenameCommentIfGUID( aString, builder );
+				GUIDComment( aString, builder );
 				return true;
 			}
 
