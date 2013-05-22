@@ -47,6 +47,15 @@ namespace UnityEditor.XCodeEditor
 			
 			return ((PBXList)_data[ FILES_KEY ]).Contains( id );
 		}
+
+		public PBXList files {
+			get {
+				if( !ContainsKey( FILES_KEY ) ) {
+					this.Add( FILES_KEY, new PBXList() );
+				}
+				return (PBXList)_data[ FILES_KEY ];
+			}
+		}
 	}
 	
 	public class PBXFrameworksBuildPhase : PBXBuildPhase
