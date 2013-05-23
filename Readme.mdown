@@ -40,12 +40,11 @@ One example, the following file will add all files in /iOS/KKKeychain to the Xco
 }
 ```
 
-## Caution
-Now, `XUPorter` is not supporting for "Append" during the build from Unity3D. There is a problem in parsing of modified Xcode project file (see [issue#3](https://github.com/onevcat/XUPorter/issues/3)). I am trying to find a way to solve it. Before this issue solved, please always build a new project or use the "Replace" when you export a Xcode project.
-
 ### To Do
-Add the "Append" support.
 Move MiniJSON to a namespace.
+
+### Contributor
+Thanks for [@pronebird](https://github.com/pronebird)'s contribution in solving the issue in building with append mode.
 
 ## LICENSE
 This code is distributed under the terms and conditions of the MIT license.
