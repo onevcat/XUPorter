@@ -7,7 +7,7 @@
 ## Installation
 Add all files of the repo to your Unity project's Editor Folder: {$ProjectFolder}/Assets/Editor/ or you can download [this unity package](http://d.pr/f/HAzc) and import to your project
 
-Some demos are contained in /Mods folder, feel free to delete or substitute all files in that folder as soon as you know how to use `XUPorter`. [A simplified MiniJSON](https://github.com/prime31/UIToolkit/blob/master/Assets/Plugins/MiniJSON.cs) is now used in `XUPorter`, if you have already used a same JSON wrapper, maybe you would like to delete or refactor it to avoid compiler errors.
+Some demos are contained in /Mods folder, feel free to delete or substitute all files in that folder as soon as you know how to use `XUPorter`. [A simplified MiniJSON](https://github.com/prime31/UIToolkit/blob/master/Assets/Plugins/MiniJSON.cs) is now used in `XUPorter`, but I put it into a namespace, so there is no worry of conflicting, even if you are already using a same JSON wrapper.
 
 `XUPorter` require Unity 3.5 or higher and Xcode 4 to work properly. I have tested for Xcode 5 DP and it can work well now too.
 
