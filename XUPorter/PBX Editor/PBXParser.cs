@@ -8,6 +8,126 @@ using System.Text.RegularExpressions;
 
 namespace UnityEditor.XCodeEditor
 {
+	public class PBXResolver
+	{
+		private class PBXResolverReverseIndex : Dictionary<string, string> {}
+
+		private PBXDictionary objects;
+		private string rootObject;
+		private PBXResolverReverseIndex index;
+
+		public PBXResolver( PBXDictionary pbxData ) {
+			this.objects = (PBXDictionary)pbxData[ "objects" ];
+			this.index = new PBXResolverReverseIndex();
+			this.rootObject = (string)pbxData[ "rootObject" ];
+			BuildReverseIndex();
+		}
+
+		private void BuildReverseIndex()
+		{
+			foreach( KeyValuePair<string, object> pair in this.objects )
+			{
+				if( pair.Value is PBXBuildPhase )
+				{
+					foreach( string guid in ((PBXBuildPhase)pair.Value).files )
+					{
+						index[ guid ] = pair.Key;
+					}
+				}
+				else if( pair.Value is PBXGroup )
+				{
+					foreach( string guid in ((PBXGroup)pair.Value).children )
+					{
+						index[ guid ] = pair.Key;
+					}
+				}
+			}
+		}
+
+		public string ResolveName( string guid )
+		{
+			object entity = this.objects[ guid ];
+
+			if( entity is PBXBuildFile )
+			{
+				return ResolveName( ((PBXBuildFile)entity).fileRef );
+			}
+			else if( entity is PBXFileReference )
+			{
+				PBXFileReference casted = (PBXFileReference)entity;
+				return casted.name != null ? casted.name : casted.path;
+			}
+			else if( entity is PBXGroup )
+			{
+				PBXGroup casted = (PBXGroup)entity;
+				return casted.name != null ? casted.name : casted.path;
+			}
+			else if( entity is PBXProject || guid == this.rootObject )
+			{
+				return "Project object";
+			}
+			else if( entity is PBXFrameworksBuildPhase )
+			{
+				return "Frameworks";
+			}
+			else if( entity is PBXResourcesBuildPhase )
+			{
+				return "Resources";
+			}
+			else if( entity is PBXShellScriptBuildPhase )
+			{
+				return "ShellScript";
+			}
+			else if( entity is PBXSourcesBuildPhase )
+			{
+				return "Sources";
+			}
+			else if( entity is PBXCopyFilesBuildPhase )
+			{
+				return "CopyFiles";
+			}
+			else if( entity is PBXObject )
+			{
+				PBXObject obj = (PBXObject)entity;
+
+				if( obj.ContainsKey( "name" ) )
+					return (string)obj.data[ "name" ];
+			}
+
+			//return "UNRESOLVED GUID:" + guid;
+			return null;
+		}
+
+		public string ResolveBuildPhaseNameForFile( string guid )
+		{
+			if( this.objects.ContainsKey( guid ) )
+			{
+				object obj = this.objects[ guid ];
+
+				if( obj is PBXObject )
+				{
+					PBXObject entity = (PBXObject)obj;
+
+					if( this.index.ContainsKey( entity.guid ) )
+					{
+						string parent_guid = this.index[ entity.guid ];
+
+						if( this.objects.ContainsKey( parent_guid ) )
+						{
+							object parent = this.objects[ parent_guid ];
+
+							if( parent is PBXBuildPhase )
+								return ResolveName( ((PBXBuildPhase)parent).guid );
+						}
+					}
+				}
+			}
+
+			return null;
+		}
+
+	}
+
 	public class PBXParser
 	{
 		public const string PBX_HEADER_TOKEN = "// !$*UTF8*$!\n";
@@ -33,6 +153,7 @@ namespace UnityEditor.XCodeEditor
 
 		private char[] data;
 		private int index;
+		private PBXResolver resolver;
 
 		public PBXDictionary Decode( string data )
 		{
@@ -50,8 +171,14 @@ namespace UnityEditor.XCodeEditor
 
 		public string Encode( PBXDictionary pbxData, bool readable = false )
 		{
+			this.resolver = new PBXResolver( pbxData );
 			StringBuilder builder = new StringBuilder( PBX_HEADER_TOKEN, BUILDER_CAPACITY );
+
 			bool success = SerializeValue( pbxData, builder, readable );
+			this.resolver = null;
+
+			// Xcode adds newline at the end of file
+			builder.Append( "\n" );
 
 			return ( success ? builder.ToString() : null );
 		}
@@ -69,7 +196,7 @@ namespace UnityEditor.XCodeEditor
 		}
 
 		private string marker = null;
-		private void MarkSection(StringBuilder builder, string name)
+		private void MarkSection( StringBuilder builder, string name )
 		{
 			if( marker == null && name == null ) return;
 
@@ -84,6 +211,25 @@ namespace UnityEditor.XCodeEditor
 			}
 
 			marker = name;
+		}
+
+		private bool GUIDComment( string guid, StringBuilder builder )
+		{
+			string filename = this.resolver.ResolveName( guid );
+			string location = this.resolver.ResolveBuildPhaseNameForFile( guid );
+
+			//Debug.Log( "RESOLVE " + guid + ": " + filename + " in " + location );
+
+			if( filename != null ) {
+				if( location != null )
+					builder.Append( String.Format( " /* {0} in {1} */", filename, location ) );
+				else
+					builder.Append( String.Format( " /* {0} */", filename) );
+
+				return true;
+			}
+
+			return false;
 		}
 
 		#endregion
@@ -321,7 +467,7 @@ namespace UnityEditor.XCodeEditor
 		private bool SerializeDictionary( Dictionary<string, object> dictionary, StringBuilder builder, bool readable = false, int indent = 0 )
 		{
 			builder.Append( DICTIONARY_BEGIN_TOKEN );
-			if( readable && dictionary.Count > 0 ) Endline( builder );
+			if( readable ) Endline( builder );
 
 			foreach( KeyValuePair<string, object> pair in dictionary )
 			{
@@ -334,18 +480,9 @@ namespace UnityEditor.XCodeEditor
 				// KEY
 				SerializeString( pair.Key, builder, false, readable );
 
-				// output file name
-				if(readable && pair.Value is PBXBuildFile) {
-					PBXFileReference fileRef = (PBXFileReference)dictionary[ ( (PBXBuildFile)pair.Value ).fileRef ];
-					if( fileRef != null )
-						builder.Append( String.Format( " /* {0} */", fileRef.name != null ? fileRef.name : fileRef.path ) );
-				}
-
 				// =
-				if(readable)
-					builder.Append( " " + DICTIONARY_ASSIGN_TOKEN + " " );
-				else
-					builder.Append( DICTIONARY_ASSIGN_TOKEN );
+				// FIX ME: cannot resolve mode because readable = false for PBXBuildFile/Reference sections
+				builder.Append( String.Format( " {0} ", DICTIONARY_ASSIGN_TOKEN ) );
 
 				// VALUE
 				// do not pretty-print PBXBuildFile or PBXFileReference as Xcode does
@@ -357,14 +494,15 @@ namespace UnityEditor.XCodeEditor
 				// end statement
 				builder.Append( DICTIONARY_ITEM_DELIMITER_TOKEN );
 
-				if( readable ) Endline( builder );
+				// FIX ME: negative readable in favor of nice output for PBXBuildFile/Reference sections
+				Endline( builder, !readable );
 			}
 
 			// output last section banner
 			if( readable && indent == 1 ) MarkSection( builder, null );
 
 			// indent }
-			if( readable && dictionary.Count > 0 ) Indent( builder, indent );
+			if( readable ) Indent( builder, indent );
 
 			builder.Append( DICTIONARY_END_TOKEN );
 
@@ -388,7 +526,9 @@ namespace UnityEditor.XCodeEditor
 				}
 
 				builder.Append( ARRAY_ITEM_DELIMITER_TOKEN );
-				if( readable ) Endline( builder );
+
+				// FIX ME: negative readable in favor of nice output for PBXBuildFile/Reference sections
+				Endline( builder, !readable );
 			}
 
 			if( readable ) Indent( builder, indent );
@@ -400,8 +540,10 @@ namespace UnityEditor.XCodeEditor
 		private bool SerializeString( string aString, StringBuilder builder, bool useQuotes = false, bool readable = false )
 		{
 			// Is a GUID?
-			if( Regex.IsMatch( aString, @"^[A-F0-9]{24}$" ) ) {
+			// Note: Unity3d generates mixed-case GUIDs, Xcode use uppercase GUIDs only.
+			if( Regex.IsMatch( aString, @"^[A-Fa-f0-9]{24}$" ) ) {
 				builder.Append( aString );
+				GUIDComment( aString, builder );
 				return true;
 			}
 
@@ -412,7 +554,9 @@ namespace UnityEditor.XCodeEditor
 				return true;
 			}
 
-			if( !Regex.IsMatch( aString, @"^[A-Za-z0-9_.]+$" ) ) {
+			// FIX ME: Original regexp was: @"^[A-Za-z0-9_.]+$", we use modified regexp with '/-' allowed
+			//		   to workaround Unity bug when all PNGs had "Libraries/" (group name) added to their paths after append
+			if( !Regex.IsMatch( aString, @"^[A-Za-z0-9_./-]+$" ) ) {
 				useQuotes = true;
 			}
 

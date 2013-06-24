@@ -63,7 +63,8 @@ namespace UnityEditor.XCodeEditor
 		
 		public static bool IsGuid( string aString )
 		{
-			return System.Text.RegularExpressions.Regex.IsMatch( aString, @"^[A-F0-9]{24}$" );
+			// Note: Unity3d generates mixed-case GUIDs, Xcode use uppercase GUIDs only.
+			return System.Text.RegularExpressions.Regex.IsMatch( aString, @"^[A-Fa-f0-9]{24}$" );
 		}
 		
 		public static string GenerateGuid()

@@ -9,7 +9,7 @@ Add all files of the repo to your Unity project's Editor Folder: {$ProjectFolder
 
 Some demos are contained in /Mods folder, feel free to delete or substitute all files in that folder as soon as you know how to use `XUPorter`. [A simplified MiniJSON](https://github.com/prime31/UIToolkit/blob/master/Assets/Plugins/MiniJSON.cs) is now used in `XUPorter`, if you have already used a same JSON wrapper, maybe you would like to delete or refactor it to avoid compiler errors.
 
-`XUPorter` require Unity 3.5 or higher and Xcode 4 to work properly. I have tested for Xcode 5 DP and it can work well now too.
+`XUPorter` require Unity 3.5 or higher and Xcode 4 to work properly.
 
 ## Usage
 After the Unity's building phase, OnPostProcessBuild in XCodePostProcess.cs will be called and Xcode project file will be modified. All .projmods (which is in JSON) will be treated as Xcode patch setting files (In the demos, all .projmods files are in /Mods folder). `XUPorter` will find and read all projmods files in /Assets and modify Xcode project file as settings.
@@ -40,8 +40,11 @@ One example, the following file will add all files in /iOS/KKKeychain to the Xco
 }
 ```
 
-## Caution
-Now, `XUPorter` is not supporting for "Append" during the build from Unity3D. There is a problem in parsing of modified Xcode project file (see [issue#3](https://github.com/onevcat/XUPorter/issues/3)). I am trying to find a way to solve it. Before this issue solved, please always build a new project or use the "Replace" when you export a Xcode project.
+### To Do
+Move MiniJSON to a namespace.
+
+### Contributor
+Thanks for [@pronebird](https://github.com/pronebird)'s contribution in solving the issue in building with append mode.
 
 ## LICENSE
 This code is distributed under the terms and conditions of the MIT license.
