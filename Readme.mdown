@@ -5,9 +5,9 @@
 中文版的说明请看[这里](http://www.onevcat.com/2012/12/xuporter/)
 
 ## Installation
-Add all files of the repo to your Unity project's Editor Folder: {$ProjectFolder}/Assets/Editor/ or you can download [this unity package](http://d.pr/f/HAzc) and import to your project
+Add all files of the repo to your Unity project's Editor Folder: {$ProjectFolder}/Assets/Editor/XUPorter or you can download [this unity package](https://www.dropbox.com/s/lo2wu7gur64py7a/XUPorter.unitypackage) and import to your project.
 
-Some demos are contained in /Mods folder, feel free to delete or substitute all files in that folder as soon as you know how to use `XUPorter`. [A simplified MiniJSON](https://github.com/prime31/UIToolkit/blob/master/Assets/Plugins/MiniJSON.cs) is now used in `XUPorter`, but I put it into a namespace, so there is no worry of conflicting, even if you are already using a same JSON wrapper.
+Some demos are contained in /Mods folder, they are just a tutorial to help you getting start. Please feel free to delete or substitute all files in that folder as soon as you know how to use `XUPorter`. [A simplified MiniJSON](https://github.com/prime31/UIToolkit/blob/master/Assets/Plugins/MiniJSON.cs) is now used in `XUPorter`, but I put it into a namespace, so there is no worry of conflicting, even if you are already using a same JSON wrapper.
 
 `XUPorter` require Unity 3.5 or higher and Xcode 4 to work properly. I have tested for Xcode 5 DP and it can work well now too.
 
@@ -23,7 +23,7 @@ In these setting files, specify the fields using a json pattern.
 * files：Files which should be added
 * folders：Folders which should be added. All file and folders(recursively) will be added
 * excludes：Regular expression pattern. Matched files will not be added.
-* linker_flags: Linker flags which should be added, e.g. -ObjC
+* linker_flags: Linker flags which should be added, e.g. "-ObjC"
 
 One example, the following file will add all files in /iOS/KKKeychain to the Xcode group `KKKeychain` and add the `Security.framework` to Xcode project.
 
