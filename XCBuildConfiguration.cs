@@ -8,6 +8,7 @@ namespace UnityEditor.XCodeEditor
 		protected const string BUILDSETTINGS_KEY = "buildSettings";
 		protected const string HEADER_SEARCH_PATHS_KEY = "HEADER_SEARCH_PATHS";
 		protected const string LIBRARY_SEARCH_PATHS_KEY = "LIBRARY_SEARCH_PATHS";
+		protected const string FRAMEWORK_SEARCH_PATHS_KEY = "FRAMEWORK_SEARCH_PATHS";
 		protected const string OTHER_C_FLAGS_KEY = "OTHER_CFLAGS";
 		protected const string OTHER_LDFLAGS_KEY = "OTHER_LDFLAGS";
 		
@@ -69,6 +70,11 @@ namespace UnityEditor.XCodeEditor
 		public bool AddLibrarySearchPaths( PBXList paths, bool recursive = true )
 		{
 			return this.AddSearchPaths( paths, LIBRARY_SEARCH_PATHS_KEY, recursive );
+		}
+
+		public bool AddFrameworkSearchPaths( PBXList paths, bool recursive = true )
+		{
+			return this.AddSearchPaths( paths, FRAMEWORK_SEARCH_PATHS_KEY, recursive );
 		}
 		
 		public bool AddOtherCFlags( string flag )

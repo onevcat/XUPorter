@@ -283,6 +283,20 @@ namespace UnityEditor.XCodeEditor
 			return modified;
 		}
 		
+		public bool AddFrameworkSearchPaths( string path )
+		{
+			return AddFrameworkSearchPaths( new PBXList( path ) );
+		}
+
+		public bool AddFrameworkSearchPaths( PBXList paths )
+		{
+			foreach( KeyValuePair<string, XCBuildConfiguration> buildConfig in buildConfigurations ) {
+				buildConfig.Value.AddFrameworkSearchPaths( paths );
+			}
+			modified = true;
+			return modified;
+		}
+		
 		public object GetObject( string guid )
 		{
 			return _objects[guid];
@@ -334,9 +348,14 @@ namespace UnityEditor.XCodeEditor
 						foreach( KeyValuePair<string, PBXFrameworksBuildPhase> currentObject in frameworkBuildPhases ) {
 							BuildAddFile(fileReference,currentObject,weak);
 						}
-						if ( !string.IsNullOrEmpty( absPath ) && ( tree.CompareTo( "SOURCE_ROOT" ) == 0 ) && File.Exists( absPath ) ) {
+						if ( !string.IsNullOrEmpty( absPath ) && ( tree.CompareTo( "SOURCE_ROOT" ) == 0 )) {
 							string libraryPath = Path.Combine( "$(SRCROOT)", Path.GetDirectoryName( filePath ) );
-							this.AddLibrarySearchPaths( new PBXList( libraryPath ) ); 
+							if (File.Exists(absPath)) {
+								this.AddLibrarySearchPaths( new PBXList( libraryPath ) ); 
+							} else {
+								this.AddFrameworkSearchPaths( new PBXList( libraryPath ) );  
+							}
+							
 						}
 						break;
 					case "PBXResourcesBuildPhase":
