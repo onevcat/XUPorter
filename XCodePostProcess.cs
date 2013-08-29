@@ -1,11 +1,14 @@
 using UnityEngine;
+#if UNITY_EDITOR
 using UnityEditor;
 using UnityEditor.Callbacks;
 using UnityEditor.XCodeEditor;
+#endif
 using System.IO;
 
 public static class XCodePostProcess
 {
+#if UNITY_EDITOR
 	[PostProcessBuild]
 	public static void OnPostProcessBuild( BuildTarget target, string path )
 	{
@@ -27,4 +30,5 @@ public static class XCodePostProcess
 		// Finally save the xcode project
 		project.Save();
 	}
+#endif
 }
