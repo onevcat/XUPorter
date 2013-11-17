@@ -27,9 +27,9 @@ namespace UnityEditor.XCodeEditor
 		#region Data
 		
 		// Objects
-		private PBXDictionary<PBXBuildFile> _buildFiles;
-		private PBXDictionary<PBXGroup> _groups;
-		private PBXDictionary<PBXFileReference> _fileReferences;
+		private PBXSortedDictionary<PBXBuildFile> _buildFiles;
+		private PBXSortedDictionary<PBXGroup> _groups;
+		private PBXSortedDictionary<PBXFileReference> _fileReferences;
 		private PBXDictionary<PBXNativeTarget> _nativeTargets;
 		
 		private PBXDictionary<PBXFrameworksBuildPhase> _frameworkBuildPhases;
@@ -39,7 +39,7 @@ namespace UnityEditor.XCodeEditor
 		private PBXDictionary<PBXCopyFilesBuildPhase> _copyBuildPhases;
 				
 		private PBXDictionary<XCBuildConfiguration> _buildConfigurations;
-		private PBXDictionary<XCConfigurationList> _configurationLists;
+		private PBXSortedDictionary<XCConfigurationList> _configurationLists;
 		
 		private PBXProject _project;
 		
@@ -123,28 +123,28 @@ namespace UnityEditor.XCodeEditor
 			}
 		}
 		
-		public PBXDictionary<PBXBuildFile> buildFiles {
+		public PBXSortedDictionary<PBXBuildFile> buildFiles {
 			get {
 				if( _buildFiles == null ) {
-					_buildFiles = new PBXDictionary<PBXBuildFile>( _objects );
+					_buildFiles = new PBXSortedDictionary<PBXBuildFile>( _objects );
 				}
 				return _buildFiles;
 			}
 		}
 		
-		public PBXDictionary<PBXGroup> groups {
+		public PBXSortedDictionary<PBXGroup> groups {
 			get {
 				if( _groups == null ) {
-					_groups = new PBXDictionary<PBXGroup>( _objects );
+					_groups = new PBXSortedDictionary<PBXGroup>( _objects );
 				}
 				return _groups;
 			}
 		}
 		
-		public PBXDictionary<PBXFileReference> fileReferences {
+		public PBXSortedDictionary<PBXFileReference> fileReferences {
 			get {
 				if( _fileReferences == null ) {
-					_fileReferences = new PBXDictionary<PBXFileReference>( _objects );
+					_fileReferences = new PBXSortedDictionary<PBXFileReference>( _objects );
 				}
 				return _fileReferences;
 			}
@@ -168,10 +168,10 @@ namespace UnityEditor.XCodeEditor
 			}
 		}
 		
-		public PBXDictionary<XCConfigurationList> configurationLists {
+		public PBXSortedDictionary<XCConfigurationList> configurationLists {
 			get {
 				if( _configurationLists == null ) {
-					_configurationLists = new PBXDictionary<XCConfigurationList>( _objects );
+					_configurationLists = new PBXSortedDictionary<XCConfigurationList>( _objects );
 				}
 				return _configurationLists;
 			}
@@ -439,6 +439,7 @@ namespace UnityEditor.XCodeEditor
 				Debug.Log( "DIR: " + directory );
 				if( directory.EndsWith( ".bundle" ) ) {
 					// Treath it like a file and copy even if not recursive
+					// TODO also for .xcdatamodeld?
 					Debug.LogWarning( "This is a special folder: " + directory );
 					AddFile( directory, newGroup, "SOURCE_ROOT", createBuildFile );
 					continue;
@@ -566,13 +567,13 @@ namespace UnityEditor.XCodeEditor
 		public void Consolidate()
 		{
 			PBXDictionary consolidated = new PBXDictionary();
-			consolidated.Append<PBXBuildFile>( this.buildFiles );
+			consolidated.Append<PBXBuildFile>( this.buildFiles );//sort!
 			consolidated.Append<PBXCopyFilesBuildPhase>( this.copyBuildPhases );
-			consolidated.Append<PBXFileReference>( this.fileReferences );
+			consolidated.Append<PBXFileReference>( this.fileReferences );//sort!
 			consolidated.Append<PBXFrameworksBuildPhase>( this.frameworkBuildPhases );
-			consolidated.Append<PBXGroup>( this.groups );
+			consolidated.Append<PBXGroup>( this.groups );//sort!
 			consolidated.Append<PBXNativeTarget>( this.nativeTargets );
-			consolidated.Add( project.guid, project.data );
+			consolidated.Add( project.guid, project.data );//TODO this should be named PBXProject?
 			consolidated.Append<PBXResourcesBuildPhase>( this.resourcesBuildPhases );
 			consolidated.Append<PBXShellScriptBuildPhase>( this.shellScriptBuildPhases );
 			consolidated.Append<PBXSourcesBuildPhase>( this.sourcesBuildPhases );
