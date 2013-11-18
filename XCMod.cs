@@ -6,8 +6,8 @@ namespace UnityEditor.XCodeEditor
 {
 	public class XCMod 
 	{
-		private Hashtable _datastore;
-		private ArrayList _libs;
+		private Hashtable _datastore = new Hashtable();
+		private ArrayList _libs = new ArrayList();
 		
 		public string name { get; private set; }
 		public string path { get; private set; }
@@ -84,6 +84,10 @@ namespace UnityEditor.XCodeEditor
 			
 			string contents = projectFileInfo.OpenText().ReadToEnd();
 			_datastore = (Hashtable)XUPorterJSON.MiniJSON.jsonDecode( contents );
+			if (_datastore == null || _datastore.Count == 0) {
+				Debug.Log (contents);
+				throw new UnityException("Parse error in file " + System.IO.Path.GetFileName(filename) + "! Check for typos such as unbalanced quotation marks, etc.");
+			}
 		}
 	}
 
