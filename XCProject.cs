@@ -73,6 +73,10 @@ namespace UnityEditor.XCodeEditor
 				}
 				
 				this.projectRootPath = filePath;
+				//if the path is relative to the project, we need to make it absolute
+				if (!System.IO.Path.IsPathRooted(projectRootPath))
+					projectRootPath = Application.dataPath.Replace("Assets", "") + projectRootPath;
+				//Debug.Log ("projectRootPath adjusted to " + projectRootPath);
 				this.filePath = projects[ 0 ];
 			}
 			
@@ -548,6 +552,10 @@ namespace UnityEditor.XCodeEditor
 			
 			Debug.Log( "Adding headerpaths..." );
 			foreach( string headerpath in mod.headerpaths ) {
+				if (headerpath.Contains("$(inherited)")) {
+					Debug.LogWarning ("not prepending a path to " + headerpath);
+					this.AddHeaderSearchPaths( headerpath );
+				} else {
 				string absoluteHeaderPath = System.IO.Path.Combine( mod.path, headerpath );
 				this.AddHeaderSearchPaths( absoluteHeaderPath );
 			}
