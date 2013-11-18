@@ -34,6 +34,7 @@ namespace UnityEditor.XCodeEditor
 				this.Add( item.Key, item.Value );
 			}
 		}
+	}
 
 	public class PBXDictionary<T> : Dictionary<string, T> where T : PBXObject
 	{
