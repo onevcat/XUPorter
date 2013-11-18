@@ -38,7 +38,7 @@ namespace UnityEditor.XCodeEditor
 			return AddSearchPaths( paths, key, recursive );
 		}
 		
-		protected bool AddSearchPaths( PBXList paths, string key, bool recursive = true )
+		protected bool AddSearchPaths( PBXList paths, string key, bool recursive = true, bool quoted = true )
 		{	
 			//Debug.Log ("AddSearchPaths " + paths + key + (recursive?" recursive":""));
 			bool modified = false;
@@ -58,8 +58,18 @@ namespace UnityEditor.XCodeEditor
 					((PBXDictionary)_data[BUILDSETTINGS_KEY])[key] = list;
 				}
 				
-				currentPath = "\\\"" + currentPath + "\\\"";
+				//Xcode uses space as the delimiter here, so if there's a space in the filename, we *must* quote. Escaping with slash may work when you are in the Xcode UI, in some situations, but it doesn't work here.
+				if (currentPath.Contains(@" ")) quoted = true;
 				
+				if (quoted) {
+					//if it ends in "/**", it wants to be recursive, and the "/**" needs to be _outside_ the quotes
+					if (currentPath.EndsWith("/**")) {
+						currentPath = "\\\"" + currentPath.Replace("/**", "\\\"/**");
+					} else {
+						currentPath = "\\\"" + currentPath + "\\\"";
+					}
+				}
+				//Debug.Log ("currentPath = " + currentPath);
 				if( !((PBXList)((PBXDictionary)_data[BUILDSETTINGS_KEY])[key]).Contains( currentPath ) ) {
 					((PBXList)((PBXDictionary)_data[BUILDSETTINGS_KEY])[key]).Add( currentPath );
 					modified = true;
@@ -87,7 +97,7 @@ namespace UnityEditor.XCodeEditor
 		
 		public bool AddOtherCFlags( string flag )
 		{
-			Debug.Log( "INIZIO 1" );
+			//Debug.Log( "INIZIO 1" );
 			PBXList flags = new PBXList();
 			flags.Add( flag );
 			return AddOtherCFlags( flags );
@@ -95,7 +105,7 @@ namespace UnityEditor.XCodeEditor
 		
 		public bool AddOtherCFlags( PBXList flags )
 		{
-			Debug.Log( "INIZIO 2" );
+			//Debug.Log( "INIZIO 2" );
 			
 			bool modified = false;
 			
