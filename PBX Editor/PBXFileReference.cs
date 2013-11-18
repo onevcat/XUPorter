@@ -78,6 +78,7 @@ namespace UnityEditor.XCodeEditor
 			
 		}
 		
+		//TODO see if XCode has a preference for ordering these attributes
 		public PBXFileReference( string filePath, TreeEnum tree = TreeEnum.SOURCE_ROOT ) : base()
 		{
 			this.Add( PATH_KEY, filePath );
