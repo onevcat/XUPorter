@@ -18,11 +18,12 @@ In these setting files, specify the fields using a json pattern.
 
 * group：The group name in Xcode to which files and folders will added by this projmods file
 * libs：The name of libs should be added in Xcode Build Phases, libz.dylib for example. If you want to import a .a lib to Xcode, add it as a file(in "files")
-* frameworks：The name of framework should be added in Xcode Build Phases, Security.framework for example. If you want to add a third part framework, add it using a relateive path to `files` section instead of here.
+* frameworks：The name of framework should be added in Xcode Build Phases, Security.framework for example. If you want to add a third party framework, add it using a relative path to `files` section instead of here.
 * headerpaths：Header Search Paths in Build Setting of Xcode
 * files：Files which should be added
 * folders：Folders which should be added. All file and folders(recursively) will be added
 * excludes：Regular expression pattern. Matched files will not be added.
+* compiler_flags: Compiler flags which should be added, e.g. "-Wno-vexing-parse"
 * linker_flags: Linker flags which should be added, e.g. "-ObjC"
 
 One example, the following file will add all files in /iOS/KKKeychain to the Xcode group `KKKeychain` and add the `Security.framework` to Xcode project.
@@ -36,7 +37,8 @@ One example, the following file will add all files in /iOS/KKKeychain to the Xco
     "files":   [],
     "folders": ["iOS/KKKeychain/"],    
     "excludes": ["^.*.meta$", "^.*.mdown$", "^.*.pdf$"],
-    “linker_flags”: []
+    "compiler_flags": [],
+    "linker_flags": []
 }
 ```
 
