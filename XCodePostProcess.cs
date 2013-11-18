@@ -9,7 +9,7 @@ using System.IO;
 public static class XCodePostProcess
 {
 #if UNITY_EDITOR
-	[PostProcessBuild]
+	[PostProcessBuild(100)]
 	public static void OnPostProcessBuild( BuildTarget target, string path )
 	{
 		if (target != BuildTarget.iPhone) {
