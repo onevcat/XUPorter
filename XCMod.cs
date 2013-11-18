@@ -14,7 +14,9 @@ namespace UnityEditor.XCodeEditor
 		
 		public string group {
 			get {
+				if (_datastore != null && _datastore.Contains("group"))
 				return (string)_datastore["group"];
+				return string.Empty;
 			}
 		}
 		
