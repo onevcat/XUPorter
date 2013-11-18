@@ -10,7 +10,7 @@ public static class XCodePostProcess
 {
 #if UNITY_EDITOR
 	[PostProcessBuild(100)]
-	public static void OnPostProcessBuild( BuildTarget target, string path )
+	public static void OnPostProcessBuild( BuildTarget target, string pathToBuiltProject )
 	{
 		if (target != BuildTarget.iPhone) {
 			Debug.LogWarning("Target is not iPhone. XCodePostProcess will not run");
@@ -18,10 +18,10 @@ public static class XCodePostProcess
 		}
 
 		// Create a new project object from build target
-		XCProject project = new XCProject( path );
+		XCProject project = new XCProject( pathToBuiltProject );
 
 		// Find and run through all projmods files to patch the project.
-		//Please pay attention that ALL projmods files in your project folder will be excuted!
+		// Please pay attention that ALL projmods files in your project folder will be excuted!
 		string[] files = Directory.GetFiles( Application.dataPath, "*.projmods", SearchOption.AllDirectories );
 		foreach( string file in files ) {
 			project.ApplyMod( file );
