@@ -92,6 +92,30 @@ namespace UnityEditor.XCodeEditor
 		}
 		
 		#endregion
+		#region syntactic sugar
+		/// <summary>
+		/// This allows us to use the form:
+		/// "if (x)" or "if (!x)"
+		/// </summary>
+		public static implicit operator bool( PBXObject x ) {
+			//if null or no data, treat us as false/null
+			return (x == null) ? false : (x.data.Count == 0);
+		}
+
+		/// <summary>
+		/// I find this handy. return our fields as comma-separated values
+		/// </summary>
+		public string ToCSV() {
+			return "\"" + data + "\", ";
+		}
+
+		/// <summary>
+		/// Concatenate and format so appears as "{,,,}"
+		/// </summary>
+		public override string ToString() {
+			return "{" + this.ToCSV() + "} ";
+		}	
+		#endregion
 	}
 	
 	public class PBXNativeTarget : PBXObject
