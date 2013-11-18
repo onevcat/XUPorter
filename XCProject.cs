@@ -305,6 +305,11 @@ namespace UnityEditor.XCodeEditor
 		public PBXDictionary AddFile( string filePath, PBXGroup parent = null, string tree = "SOURCE_ROOT", bool createBuildFiles = true, bool weak = false )
 		{
 			PBXDictionary results = new PBXDictionary();
+			if (filePath == null) {
+				Debug.LogError ("AddFile called with null filePath");
+				return results;
+			}
+
 			string absPath = string.Empty;
 			
 			if( Path.IsPathRooted( filePath ) ) {
