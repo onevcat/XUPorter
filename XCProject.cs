@@ -56,7 +56,7 @@ namespace UnityEditor.XCodeEditor
 		public XCProject( string filePath ) : this()
 		{
 			if( !System.IO.Directory.Exists( filePath ) ) {
-				Debug.LogWarning( "Path does not exists." );
+				Debug.LogWarning( "Path does not exist." );
 				return;
 			}
 			
@@ -331,7 +331,7 @@ namespace UnityEditor.XCodeEditor
 			//Check if there is already a file
 			PBXFileReference fileReference = GetFile( System.IO.Path.GetFileName( filePath ) );	
 			if( fileReference != null ) {
-				Debug.LogWarning("File is already exists: " + filePath);
+				Debug.Log("File already exists: " + filePath); //not a warning, because this is normal for most builds!
 				return null;
 			}
 			
@@ -379,10 +379,10 @@ namespace UnityEditor.XCodeEditor
 						}
 						break;
 					case null:
-						Debug.LogWarning( "File Not Support: " + filePath );
+						Debug.LogWarning( "File Not Supported: " + filePath );
 						break;
 					default:
-						Debug.LogWarning( "File Not Support." );
+						Debug.LogWarning( "File Not Supported." );
 						return null;
 				}
 			}
@@ -438,7 +438,7 @@ namespace UnityEditor.XCodeEditor
 			foreach( string directory in Directory.GetDirectories( folderPath ) ) {
 				Debug.Log( "DIR: " + directory );
 				if( directory.EndsWith( ".bundle" ) ) {
-					// Treath it like a file and copy even if not recursive
+					// Treat it like a file and copy even if not recursive
 					// TODO also for .xcdatamodeld?
 					Debug.LogWarning( "This is a special folder: " + directory );
 					AddFile( directory, newGroup, "SOURCE_ROOT", createBuildFile );
