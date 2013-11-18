@@ -15,8 +15,8 @@ namespace UnityEditor.XCodeEditor
 		
 		public PBXGroup( string name, string path = null, string tree = "SOURCE_ROOT" ) : base()
 		{	
-			this.Add( NAME_KEY, name );
 			this.Add( CHILDREN_KEY, new PBXList() );
+			this.Add( NAME_KEY, name );
 			
 			if( path != null ) {
 				this.Add( PATH_KEY, path );
@@ -35,21 +35,21 @@ namespace UnityEditor.XCodeEditor
 		#endregion
 		#region Properties
 		
-		public string name {
-			get {
-				if( !ContainsKey( NAME_KEY ) ) {
-					return null;
-				}
-				return (string)_data[NAME_KEY];
-			}
-		}
-		
 		public PBXList children {
 			get {
 				if( !ContainsKey( CHILDREN_KEY ) ) {
 					this.Add( CHILDREN_KEY, new PBXList() );
 				}
 				return (PBXList)_data[CHILDREN_KEY];
+			}
+		}
+		
+		public string name {
+			get {
+				if( !ContainsKey( NAME_KEY ) ) {
+					return null;
+				}
+				return (string)_data[NAME_KEY];
 			}
 		}
 		

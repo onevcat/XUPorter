@@ -17,11 +17,16 @@ namespace UnityEditor.XCodeEditor
 			
 		}
 		
-		public PBXDictionary buildSettings {
+		public PBXSortedDictionary buildSettings {
 			get {
-				if( ContainsKey( BUILDSETTINGS_KEY ) )
-					return (PBXDictionary)_data[BUILDSETTINGS_KEY];
-			
+				if( ContainsKey( BUILDSETTINGS_KEY ) ) {
+					if (_data[BUILDSETTINGS_KEY].GetType() == typeof(PBXDictionary)) {
+						PBXSortedDictionary ret = new PBXSortedDictionary();
+						ret.Append((PBXDictionary)_data[BUILDSETTINGS_KEY]);						
+						return ret;
+					}
+					return (PBXSortedDictionary)_data[BUILDSETTINGS_KEY];	
+				}
 				return null;
 			}
 		}
@@ -35,13 +40,15 @@ namespace UnityEditor.XCodeEditor
 		
 		protected bool AddSearchPaths( PBXList paths, string key, bool recursive = true )
 		{	
+			//Debug.Log ("AddSearchPaths " + paths + key + (recursive?" recursive":""));
 			bool modified = false;
 			
 			if( !ContainsKey( BUILDSETTINGS_KEY ) )
-				this.Add( BUILDSETTINGS_KEY, new PBXDictionary() );
+				this.Add( BUILDSETTINGS_KEY, new PBXSortedDictionary() );
 			
 			foreach( string path in paths ) {
 				string currentPath = path;
+				//Debug.Log ("path " + currentPath);
 				if( !((PBXDictionary)_data[BUILDSETTINGS_KEY]).ContainsKey( key ) ) {
 					((PBXDictionary)_data[BUILDSETTINGS_KEY]).Add( key, new PBXList() );
 				}
@@ -69,6 +76,7 @@ namespace UnityEditor.XCodeEditor
 		
 		public bool AddLibrarySearchPaths( PBXList paths, bool recursive = true )
 		{
+			Debug.Log ("AddLibrarySearchPaths " + paths);
 			return this.AddSearchPaths( paths, LIBRARY_SEARCH_PATHS_KEY, recursive );
 		}
 
@@ -92,7 +100,7 @@ namespace UnityEditor.XCodeEditor
 			bool modified = false;
 			
 			if( !ContainsKey( BUILDSETTINGS_KEY ) )
-				this.Add( BUILDSETTINGS_KEY, new PBXDictionary() );
+				this.Add( BUILDSETTINGS_KEY, new PBXSortedDictionary() );
 			
 			foreach( string flag in flags ) {
 				
@@ -126,7 +134,7 @@ namespace UnityEditor.XCodeEditor
 			bool modified = false;
 
 			if( !ContainsKey( BUILDSETTINGS_KEY ) )
-				this.Add( BUILDSETTINGS_KEY, new PBXDictionary() );
+				this.Add( BUILDSETTINGS_KEY, new PBXSortedDictionary() );
 
 			foreach( string flag in flags ) {
 				
