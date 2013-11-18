@@ -51,6 +51,9 @@ namespace UnityEditor.XCodeEditor
 					((PBXDictionary)_data[BUILDSETTINGS_KEY])[key] = list;
 				}
 				
+				//Xcode uses space as the delimiter here, so if there's a space in the filename, we *must* quote. Escaping with slash may work when you are in the Xcode UI, in some situations, but it doesn't work here.
+				if (currentPath.Contains(@" ")) quoted = true;
+				
 				if (quoted) {
 					//if it ends in "/**", it wants to be recursive, and the "/**" needs to be _outside_ the quotes
 					if (currentPath.EndsWith("/**")) {
