@@ -59,7 +59,7 @@ namespace UnityEditor.XCodeEditor
 						currentPath = "\\\"" + currentPath + "\\\"";
 					}
 				}
-				if (debug) Debug.Log ("currentPath = " + currentPath);
+				//Debug.Log ("currentPath = " + currentPath);
 				if( !((PBXList)((PBXDictionary)_data[BUILDSETTINGS_KEY])[key]).Contains( currentPath ) ) {
 					((PBXList)((PBXDictionary)_data[BUILDSETTINGS_KEY])[key]).Add( currentPath );
 					modified = true;
