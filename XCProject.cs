@@ -73,6 +73,10 @@ namespace UnityEditor.XCodeEditor
 				}
 				
 				this.projectRootPath = filePath;
+				//if the path is relative to the project, we need to make it absolute
+				if (!System.IO.Path.IsPathRooted(projectRootPath))
+					projectRootPath = Application.dataPath.Replace("Assets", "") + projectRootPath;
+				//Debug.Log ("projectRootPath adjusted to " + projectRootPath);
 				this.filePath = projects[ 0 ];
 			}
 			
