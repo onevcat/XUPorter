@@ -68,6 +68,12 @@ namespace UnityEditor.XCodeEditor
 			}
 		}
 
+		public ArrayList compiler_flags {
+			get {
+				return (ArrayList)_datastore["compiler_flags"];
+			}
+		}
+
 		public ArrayList linker_flags {
 			get {
 				return (ArrayList)_datastore["linker_flags"];
