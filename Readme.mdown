@@ -43,7 +43,7 @@ One example, the following file will add all files in /iOS/KKKeychain to the Xco
 ```
 
 ### Contributor
-Thanks for [@pronebird](https://github.com/pronebird)'s contribution in solving the issue in building with append mode.
+Thanks for all contributors of this project. Especially [@pronebird](https://github.com/pronebird) and [@MatthewMaker](https://github.com/MatthewMaker)'s great effort!
 
 ## LICENSE
 This code is distributed under the terms and conditions of the MIT license.
