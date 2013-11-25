@@ -11,17 +11,17 @@ namespace UnityEditor.XCodeEditor
 	{
 		private PBXDictionary _datastore;
 		public PBXDictionary _objects;
-		private PBXDictionary _configurations;
+		//private PBXDictionary _configurations;
 		
 		private PBXGroup _rootGroup;
-		private string _defaultConfigurationName;
+		//private string _defaultConfigurationName;
 		private string _rootObjectKey;
 	
 		public string projectRootPath { get; private set; }
 		private FileInfo projectFileInfo;
 		
 		public string filePath { get; private set; }
-		private string sourcePathRoot;
+		//private string sourcePathRoot;
 		private bool modified = false;
 		
 		#region Data
@@ -266,6 +266,7 @@ namespace UnityEditor.XCodeEditor
 		
 		public bool AddHeaderSearchPaths( PBXList paths )
 		{
+			Debug.Log ("AddHeaderSearchPaths " + paths);
 			foreach( KeyValuePair<string, XCBuildConfiguration> buildConfig in buildConfigurations ) {
 				buildConfig.Value.AddHeaderSearchPaths( paths );
 			}
@@ -280,6 +281,7 @@ namespace UnityEditor.XCodeEditor
 		
 		public bool AddLibrarySearchPaths( PBXList paths )
 		{
+			Debug.Log ("AddLibrarySearchPaths " + paths);
 			foreach( KeyValuePair<string, XCBuildConfiguration> buildConfig in buildConfigurations ) {
 				buildConfig.Value.AddLibrarySearchPaths( paths );
 			}
@@ -308,6 +310,8 @@ namespace UnityEditor.XCodeEditor
 		
 		public PBXDictionary AddFile( string filePath, PBXGroup parent = null, string tree = "SOURCE_ROOT", bool createBuildFiles = true, bool weak = false )
 		{
+			//Debug.Log("AddFile " + filePath + ", " + parent + ", " + tree + ", " + (createBuildFiles? "TRUE":"FALSE") + ", " + (weak? "TRUE":"FALSE") ); 
+			
 			PBXDictionary results = new PBXDictionary();
 			if (filePath == null) {
 				Debug.LogError ("AddFile called with null filePath");
@@ -526,12 +530,14 @@ namespace UnityEditor.XCodeEditor
 		
 		public void ApplyMod( XCMod mod )
 		{	
+			Debug.Log ("Applying mod " + mod);
 			PBXGroup modGroup = this.GetGroup( mod.group );
 			
 			Debug.Log( "Adding libraries..." );
 			
 			foreach( XCModFile libRef in mod.libs ) {
 				string completeLibPath = System.IO.Path.Combine( "usr/lib", libRef.filePath );
+				//Debug.Log ("Adding library " + completeLibPath);
 				this.AddFile( completeLibPath, modGroup, "SDKROOT", true, libRef.isWeak );
 			}
 			
@@ -553,6 +559,7 @@ namespace UnityEditor.XCodeEditor
 			Debug.Log( "Adding folders..." );
 			foreach( string folderPath in mod.folders ) {
 				string absoluteFolderPath = System.IO.Path.Combine( mod.path, folderPath );
+				Debug.Log ("Adding folder " + absoluteFolderPath);
 				this.AddFolder( absoluteFolderPath, modGroup, (string[])mod.excludes.ToArray( typeof(string) ) );
 			}
 			
