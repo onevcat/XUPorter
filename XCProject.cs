@@ -558,8 +558,13 @@ namespace UnityEditor.XCodeEditor
 			
 			Debug.Log( "Adding headerpaths..." );
 			foreach( string headerpath in mod.headerpaths ) {
-				string absoluteHeaderPath = System.IO.Path.Combine( mod.path, headerpath );
-				this.AddHeaderSearchPaths( absoluteHeaderPath );
+				if (headerpath.Contains("$(inherited)")) {
+					Debug.LogWarning ("not prepending a path to " + headerpath);
+					this.AddHeaderSearchPaths( headerpath );
+				} else {
+					string absoluteHeaderPath = System.IO.Path.Combine( mod.path, headerpath );
+					this.AddHeaderSearchPaths( absoluteHeaderPath );
+				}
 			}
 
 			Debug.Log( "Adding linker flags..." );
