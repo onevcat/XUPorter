@@ -98,7 +98,7 @@ namespace UnityEditor.XCodeEditor
 				//Debug.LogWarning ("XCConfigurationList " + guid + " " + casted.ToString());
 				
 				if( casted.data.ContainsKey( "defaultConfigurationName" ) ) {
-					Debug.Log ("XCConfigurationList " + (string)casted.data[ "defaultConfigurationName" ] + " " + guid);
+					//Debug.Log ("XCConfigurationList " + (string)casted.data[ "defaultConfigurationName" ] + " " + guid);
 					return (string)casted.data[ "defaultConfigurationName" ];
 				}
 
@@ -110,7 +110,7 @@ namespace UnityEditor.XCodeEditor
 				//Debug.LogWarning ("PBXNativeTarget " + guid + " " + obj.ToString());
 				
 				if( obj.data.ContainsKey( "name" ) ) {
-					Debug.Log ("PBXNativeTarget " + (string)obj.data[ "name" ] + " " + guid);
+					//Debug.Log ("PBXNativeTarget " + (string)obj.data[ "name" ] + " " + guid);
 					return (string)obj.data[ "name" ];
 				}
 
@@ -122,7 +122,7 @@ namespace UnityEditor.XCodeEditor
 				//Debug.LogWarning ("XCBuildConfiguration UNRESOLVED GUID:" + guid + " " + (obj==null?"":obj.ToString()));
 
 				if( obj.data.ContainsKey( "name" ) ) {
-					Debug.Log ("XCBuildConfiguration " + (string)obj.data[ "name" ] + " " + guid + " " + (obj==null?"":obj.ToString()));
+					//Debug.Log ("XCBuildConfiguration " + (string)obj.data[ "name" ] + " " + guid + " " + (obj==null?"":obj.ToString()));
 					return (string)obj.data[ "name" ];
 				}
 				
