@@ -259,6 +259,22 @@ namespace UnityEditor.XCodeEditor
 			return modified;	
 		}
 		
+		public bool overwriteBuildSetting( string settingName, string newValue, string buildConfigName = "all") {
+			Debug.Log("overwriteBuildSetting " + settingName + " " + newValue + " " + buildConfigName);
+			foreach( KeyValuePair<string, XCBuildConfiguration> buildConfig in buildConfigurations ) {
+				//Debug.Log ("build config " + buildConfig);
+				XCBuildConfiguration b = buildConfig.Value;
+				if ( (string)b.data["name"] == buildConfigName || (string)b.data["name"] == "all") {
+					//Debug.Log ("found " + buildConfigName + " config");
+					buildConfig.Value.overwriteBuildSetting(settingName, newValue);
+					modified = true;
+				} else {
+					//Debug.LogWarning ("skipping " + buildConfigName + " config " + (string)b.data["name"]);
+				}
+			}
+			return modified;
+		}
+
 		public bool AddHeaderSearchPaths( string path )
 		{
 			return AddHeaderSearchPaths( new PBXList( path ) );

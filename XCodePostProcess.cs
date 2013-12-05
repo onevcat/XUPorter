@@ -27,6 +27,9 @@ public static class XCodePostProcess
 			project.ApplyMod( file );
 		}
 
+		//TODO implement generic settings as a module option
+		project.overwriteBuildSetting("CODE_SIGN_IDENTITY[sdk=iphoneos*]", "iPhone Distribution", "Release");
+		
 		// Finally save the xcode project
 		project.Save();
 	}
