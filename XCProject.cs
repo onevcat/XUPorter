@@ -56,7 +56,7 @@ namespace UnityEditor.XCodeEditor
 		public XCProject( string filePath ) : this()
 		{
 			if( !System.IO.Directory.Exists( filePath ) ) {
-				Debug.LogWarning( "Path does not exist." );
+				Debug.LogWarning( "Path does not exist: " + filePath );
 				return;
 			}
 			
@@ -566,7 +566,7 @@ namespace UnityEditor.XCodeEditor
 			Debug.Log( "Adding headerpaths..." );
 			foreach( string headerpath in mod.headerpaths ) {
 				if (headerpath.Contains("$(inherited)")) {
-					Debug.LogWarning ("not prepending a path to " + headerpath);
+					Debug.Log ("not prepending a path to " + headerpath);
 					this.AddHeaderSearchPaths( headerpath );
 				} else {
 					string absoluteHeaderPath = System.IO.Path.Combine( mod.path, headerpath );

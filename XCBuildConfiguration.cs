@@ -40,7 +40,7 @@ namespace UnityEditor.XCodeEditor
 		
 		protected bool AddSearchPaths( PBXList paths, string key, bool recursive = true, bool quoted = false ) //we want no quoting whenever we can get away with it
 		{	
-			Debug.Log ("AddSearchPaths " + paths + key + (recursive?" recursive":"") + " " + (quoted?" quoted":""));
+			//Debug.Log ("AddSearchPaths " + paths + key + (recursive?" recursive":"") + " " + (quoted?" quoted":""));
 			bool modified = false;
 			
 			if( !ContainsKey( BUILDSETTINGS_KEY ) )
