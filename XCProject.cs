@@ -38,6 +38,7 @@ namespace UnityEditor.XCodeEditor
 		private PBXDictionary<PBXSourcesBuildPhase> _sourcesBuildPhases;
 		private PBXDictionary<PBXCopyFilesBuildPhase> _copyBuildPhases;
 				
+		private PBXDictionary<PBXVariantGroup> _variantGroups;
 		private PBXDictionary<XCBuildConfiguration> _buildConfigurations;
 		private PBXSortedDictionary<XCConfigurationList> _configurationLists;
 		
@@ -56,7 +57,7 @@ namespace UnityEditor.XCodeEditor
 		public XCProject( string filePath ) : this()
 		{
 			if( !System.IO.Directory.Exists( filePath ) ) {
-				Debug.LogWarning( "Path does not exist: " + filePath );
+				Debug.LogWarning( "XCode project path does not exist: " + filePath );
 				return;
 			}
 			
@@ -151,6 +152,15 @@ namespace UnityEditor.XCodeEditor
 					_fileReferences = new PBXSortedDictionary<PBXFileReference>( _objects );
 				}
 				return _fileReferences;
+			}
+		}
+		
+		public PBXDictionary<PBXVariantGroup> variantGroups {
+			get {
+				if( _variantGroups == null ) {
+					_variantGroups = new PBXDictionary<PBXVariantGroup>( _objects );
+				}
+				return _variantGroups;
 			}
 		}
 		
@@ -352,7 +362,10 @@ namespace UnityEditor.XCodeEditor
 				System.Uri rootURI = new System.Uri( ( projectRootPath + "/." ) );
 				filePath = rootURI.MakeRelativeUri( fileURI ).ToString();
 			}
-			
+			else if( tree.CompareTo("GROUP") == 0) {
+				filePath = System.IO.Path.GetFileName( filePath );
+			}
+
 			if( parent == null ) {
 				parent = _rootGroup;
 			}
@@ -453,13 +466,17 @@ namespace UnityEditor.XCodeEditor
 		{
 			if( !Directory.Exists( folderPath ) )
 				return false;
-			DirectoryInfo sourceDirectoryInfo = new DirectoryInfo( folderPath );
-			
-			if( exclude == null )
-				exclude = new string[] {};
-			
-			if( parent == null )
-				parent = rootGroup;
+
+			if (folderPath.EndsWith(".lproj"))
+				return AddLocFolder(folderPath, parent, exclude, createBuildFile);
+
+ 			DirectoryInfo sourceDirectoryInfo = new DirectoryInfo( folderPath );
+
+ 			if( exclude == null )
+ 				exclude = new string[] {};
+ 			
+ 			if( parent == null )
+ 				parent = rootGroup;
 			
 			// Create group
 			PBXGroup newGroup = GetGroup( sourceDirectoryInfo.Name, null /*relative path*/, parent );
@@ -492,6 +509,49 @@ namespace UnityEditor.XCodeEditor
 			modified = true;
 			return modified;
 		}
+
+		// We support neither recursing into nor bundles contained inside loc folders
+		public bool AddLocFolder( string folderPath, PBXGroup parent = null, string[] exclude = null, bool createBuildFile = true)
+		{
+			DirectoryInfo sourceDirectoryInfo = new DirectoryInfo( folderPath );
+
+			if( exclude == null )
+				exclude = new string[] {};
+			
+			if( parent == null )
+				parent = rootGroup;
+
+			// Create group as needed
+			System.Uri projectFolderURI = new System.Uri( projectFileInfo.DirectoryName );
+			System.Uri locFolderURI = new System.Uri( folderPath );
+			var relativePath = projectFolderURI.MakeRelativeUri( locFolderURI ).ToString();
+			PBXGroup newGroup = GetGroup( sourceDirectoryInfo.Name, relativePath, parent );
+
+			// Add loc region to project
+			string nom = sourceDirectoryInfo.Name;
+			string region = nom.Substring(0, nom.Length - ".lproj".Length);
+			project.AddRegion(region);
+			
+			// Adding files.
+			string regexExclude = string.Format( @"{0}", string.Join( "|", exclude ) );
+			foreach( string file in Directory.GetFiles( folderPath ) ) {
+				if( Regex.IsMatch( file, regexExclude ) ) {
+					continue;
+				}
+
+				// Add a variant group for the language as well
+				var variant = new PBXVariantGroup(System.IO.Path.GetFileName( file ), null, "GROUP");
+				variantGroups.Add(variant);
+
+				// The group gets a reference to the variant, not to the file itself
+				newGroup.AddChild(variant);
+
+				AddFile( file, variant, "GROUP", createBuildFile );
+			}
+			
+			modified = true;
+			return modified;
+		}		
 		#endregion
 
 		#region Getters
@@ -619,6 +679,7 @@ namespace UnityEditor.XCodeEditor
 			consolidated.Append<PBXResourcesBuildPhase>( this.resourcesBuildPhases );
 			consolidated.Append<PBXShellScriptBuildPhase>( this.shellScriptBuildPhases );
 			consolidated.Append<PBXSourcesBuildPhase>( this.sourcesBuildPhases );
+			consolidated.Append<PBXVariantGroup>( this.variantGroups );
 			consolidated.Append<XCBuildConfiguration>( this.buildConfigurations );
 			consolidated.Append<XCConfigurationList>( this.configurationLists );
 			_objects = consolidated;
