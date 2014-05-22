@@ -7,7 +7,7 @@ namespace UnityEditor.XCodeEditor
 	public class XCMod 
 	{
 		private Hashtable _datastore = new Hashtable();
-		private ArrayList _libs = new ArrayList();
+		private ArrayList _libs = null;
 		
 		public string name { get; private set; }
 		public string path { get; private set; }
