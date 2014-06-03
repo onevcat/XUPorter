@@ -493,7 +493,7 @@ namespace UnityEditor.XCodeEditor
 				
 				if( recursive ) {
 					Debug.Log( "recursive" );
-					AddFolder( directory, newGroup, exclude, recursive, createBuildFile, true, compilerFlags );
+					AddFolder( directory, newGroup, exclude, recursive, createBuildFile, compilerFlags );
 				}
 			}
 			
