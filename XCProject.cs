@@ -458,10 +458,9 @@ namespace UnityEditor.XCodeEditor
 			currentObject.Value.AddBuildFile( buildFile );
 		}
 		
-		public bool AddFolder( string folderPath, PBXGroup parent = null, string[] exclude = null, bool recursive = true, bool createBuildFile = true )
+		public bool AddFolder( string folderPath, PBXGroup parent = null, string[] exclude = null, bool recursive = true, bool createBuildFile = true, string compilerFlags = "" )
 		{
 			var pathExplode = folderPath.Split(':');
-			var compilerFlags = "";
 			
 			if (pathExplode.Length > 1)
 			{
@@ -494,7 +493,7 @@ namespace UnityEditor.XCodeEditor
 				
 				if( recursive ) {
 					Debug.Log( "recursive" );
-					AddFolder( directory, newGroup, exclude, recursive, createBuildFile );
+					AddFolder( directory, newGroup, exclude, recursive, createBuildFile, true, compilerFlags );
 				}
 			}
 			
