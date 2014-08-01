@@ -31,6 +31,7 @@ namespace UnityEditor.XCodeEditor
 				if( _libs == null ) {
 					_libs = new ArrayList( ((ArrayList)_datastore["libs"]).Count );
 					foreach( string fileRef in (ArrayList)_datastore["libs"] ) {
+						Debug.Log("Adding to Libs: "+fileRef);
 						_libs.Add( new XCModFile( fileRef ) );
 					}
 				}
@@ -91,7 +92,7 @@ namespace UnityEditor.XCodeEditor
 			path = System.IO.Path.GetDirectoryName( filename );
 			
 			string contents = projectFileInfo.OpenText().ReadToEnd();
-			//Debug.Log (contents);
+			Debug.Log (contents);
 			_datastore = (Hashtable)XUPorterJSON.MiniJSON.jsonDecode( contents );
 			if (_datastore == null || _datastore.Count == 0) {
 				Debug.Log (contents);
