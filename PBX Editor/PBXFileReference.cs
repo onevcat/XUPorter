@@ -13,6 +13,7 @@ namespace UnityEditor.XCodeEditor
 		protected const string LASTKNOWN_FILE_TYPE_KEY = "lastKnownFileType";
 		protected const string ENCODING_KEY = "fileEncoding";
 		
+		public string compilerFlags;
 		public string buildPhase;
 		public readonly Dictionary<TreeEnum, string> trees = new Dictionary<TreeEnum, string> {
 			{ TreeEnum.ABSOLUTE, "<absolute>" },

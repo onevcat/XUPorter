@@ -26,6 +26,8 @@ In these setting files, specify the fields using a json pattern.
 * compiler_flags: Compiler flags which should be added, e.g. "-Wno-vexing-parse"
 * linker_flags: Linker flags which should be added, e.g. "-ObjC"
 
+Use : for folders and files to add compiler flags to those files. For example: `path/to/my/folder:-fobjc-arc` or `path/to/my/file.m:-fobjc-arc`. You can add multiple compiler flags by using , to seperate them, too.
+
 One example, the following file will add all files in /iOS/KKKeychain to the Xcode group `KKKeychain` and add the `Security.framework` to Xcode project.
 
 ```

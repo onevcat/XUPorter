@@ -324,9 +324,17 @@ namespace UnityEditor.XCodeEditor
 			return _objects[guid];
 		}
 		
-		public PBXDictionary AddFile( string filePath, PBXGroup parent = null, string tree = "SOURCE_ROOT", bool createBuildFiles = true, bool weak = false )
+		public PBXDictionary AddFile( string filePath, PBXGroup parent = null, string tree = "SOURCE_ROOT", bool createBuildFiles = true, bool weak = false, string compilerFlags = "")
 		{
 			//Debug.Log("AddFile " + filePath + ", " + parent + ", " + tree + ", " + (createBuildFiles? "TRUE":"FALSE") + ", " + (weak? "TRUE":"FALSE") ); 
+			
+			var pathExplode = filePath.Split(':');
+			
+			if (pathExplode.Length > 1)
+			{
+				filePath = pathExplode[0];
+				compilerFlags = pathExplode[1];
+			}
 			
 			PBXDictionary results = new PBXDictionary();
 			if (filePath == null) {
@@ -365,6 +373,7 @@ namespace UnityEditor.XCodeEditor
 			}
 			
 			fileReference = new PBXFileReference( filePath, (TreeEnum)System.Enum.Parse( typeof(TreeEnum), tree ) );
+			fileReference.compilerFlags = compilerFlags;
 			parent.AddChild( fileReference );
 			fileReferences.Add( fileReference );
 			results.Add( fileReference.guid, fileReference );
@@ -449,8 +458,16 @@ namespace UnityEditor.XCodeEditor
 			currentObject.Value.AddBuildFile( buildFile );
 		}
 		
-		public bool AddFolder( string folderPath, PBXGroup parent = null, string[] exclude = null, bool recursive = true, bool createBuildFile = true )
+		public bool AddFolder( string folderPath, PBXGroup parent = null, string[] exclude = null, bool recursive = true, bool createBuildFile = true, string compilerFlags = "" )
 		{
+			var pathExplode = folderPath.Split(':');
+			
+			if (pathExplode.Length > 1)
+			{
+				folderPath = pathExplode[0];
+				compilerFlags = pathExplode[1];
+			}
+			
 			if( !Directory.Exists( folderPath ) )
 				return false;
 			DirectoryInfo sourceDirectoryInfo = new DirectoryInfo( folderPath );
@@ -476,8 +493,13 @@ namespace UnityEditor.XCodeEditor
 				
 				if( recursive ) {
 					Debug.Log( "recursive" );
-					AddFolder( directory, newGroup, exclude, recursive, createBuildFile );
+					AddFolder( directory, newGroup, exclude, recursive, createBuildFile, compilerFlags );
 				}
+			}
+			
+			if (compilerFlags != "")
+			{
+				Debug.LogError (compilerFlags);
 			}
 			
 			// Adding files.
@@ -486,7 +508,7 @@ namespace UnityEditor.XCodeEditor
 				if( Regex.IsMatch( file, regexExclude ) ) {
 					continue;
 				}
-				AddFile( file, newGroup, "SOURCE_ROOT", createBuildFile );
+				AddFile( file, newGroup, "SOURCE_ROOT", createBuildFile, false, compilerFlags );
 			}
 			
 			modified = true;
