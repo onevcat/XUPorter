@@ -6,5 +6,6 @@
     "files":   ["iOS/Store/libStoreKit.a"],
     "folders": [],    
     "excludes": ["^.*.meta$", "^.*.mdown$", "^.*.pdf$"],
+    "compiler_flags": [],
     "linker_flags": []
 }
