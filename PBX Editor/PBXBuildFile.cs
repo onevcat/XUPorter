@@ -16,6 +16,12 @@ namespace UnityEditor.XCodeEditor
 		{
 			this.Add( FILE_REF_KEY, fileRef.guid );
 			SetWeakLink( weak );
+			
+			if (!string.IsNullOrEmpty(fileRef.compilerFlags))
+			{
+				foreach (var flag in fileRef.compilerFlags.Split(','))
+					AddCompilerFlag(flag);
+			}
 		}
 		
 		public PBXBuildFile( string guid, PBXDictionary dictionary ) : base ( guid, dictionary )

@@ -347,6 +347,7 @@ namespace UnityEditor.XCodeEditor
 			string absPath = string.Empty;
 			
 			if( Path.IsPathRooted( filePath ) ) {
+				Debug.Log( "Path is Rooted" );
 				absPath = filePath;
 			}
 			else if( tree.CompareTo( "SDKROOT" ) != 0) {
@@ -358,11 +359,13 @@ namespace UnityEditor.XCodeEditor
 				return results;
 			}
 			else if( tree.CompareTo( "SOURCE_ROOT" ) == 0 ) {
+				Debug.Log( "Source Root File" );
 				System.Uri fileURI = new System.Uri( absPath );
 				System.Uri rootURI = new System.Uri( ( projectRootPath + "/." ) );
 				filePath = rootURI.MakeRelativeUri( fileURI ).ToString();
 			}
 			else if( tree.CompareTo("GROUP") == 0) {
+				Debug.Log( "Group File" );
 				filePath = System.IO.Path.GetFileName( filePath );
 			}
 
@@ -402,21 +405,25 @@ namespace UnityEditor.XCodeEditor
 						break;
 					case "PBXResourcesBuildPhase":
 						foreach( KeyValuePair<string, PBXResourcesBuildPhase> currentObject in resourcesBuildPhases ) {
+							Debug.Log( "Adding Resources Build File" );
 							BuildAddFile(fileReference,currentObject,weak);
 						}
 						break;
 					case "PBXShellScriptBuildPhase":
 						foreach( KeyValuePair<string, PBXShellScriptBuildPhase> currentObject in shellScriptBuildPhases ) {
+							Debug.Log( "Adding Script Build File" );
 							BuildAddFile(fileReference,currentObject,weak);
 						}
 						break;
 					case "PBXSourcesBuildPhase":
 						foreach( KeyValuePair<string, PBXSourcesBuildPhase> currentObject in sourcesBuildPhases ) {
+							Debug.Log( "Adding Source Build File" );
 							BuildAddFile(fileReference,currentObject,weak);
 						}
 						break;
 					case "PBXCopyFilesBuildPhase":
 						foreach( KeyValuePair<string, PBXCopyFilesBuildPhase> currentObject in copyBuildPhases ) {
+							Debug.Log( "Adding Copy Files Build Phase" );
 							BuildAddFile(fileReference,currentObject,weak);
 						}
 						break;
@@ -464,23 +471,33 @@ namespace UnityEditor.XCodeEditor
 		
 		public bool AddFolder( string folderPath, PBXGroup parent = null, string[] exclude = null, bool recursive = true, bool createBuildFile = true )
 		{
-			if( !Directory.Exists( folderPath ) )
+			Debug.Log("Folder PATH: "+folderPath);
+			if( !Directory.Exists( folderPath ) ){
+				Debug.Log("Directory doesn't exist?");
 				return false;
+			}
 
-			if (folderPath.EndsWith(".lproj"))
+			if (folderPath.EndsWith(".lproj")){
+				Debug.Log("Ended with .lproj");
 				return AddLocFolder(folderPath, parent, exclude, createBuildFile);
+			}
 
  			DirectoryInfo sourceDirectoryInfo = new DirectoryInfo( folderPath );
 
- 			if( exclude == null )
+ 			if( exclude == null ){
+				Debug.Log("Exclude was null");
  				exclude = new string[] {};
+			}
  			
- 			if( parent == null )
+ 			if( parent == null ){
+				Debug.Log("Parent was null");
  				parent = rootGroup;
+			}
 			
 			// Create group
 			PBXGroup newGroup = GetGroup( sourceDirectoryInfo.Name, null /*relative path*/, parent );
-			
+			Debug.Log("New Group created");
+
 			foreach( string directory in Directory.GetDirectories( folderPath ) ) {
 				Debug.Log( "DIR: " + directory );
 				if( directory.EndsWith( ".bundle" ) ) {
@@ -503,6 +520,7 @@ namespace UnityEditor.XCodeEditor
 				if( Regex.IsMatch( file, regexExclude ) ) {
 					continue;
 				}
+				Debug.Log("Adding Files for Folder");
 				AddFile( file, newGroup, "SOURCE_ROOT", createBuildFile );
 			}
 			
@@ -601,19 +619,21 @@ namespace UnityEditor.XCodeEditor
 		public void ApplyMod( string pbxmod )
 		{
 			XCMod mod = new XCMod( pbxmod );
+			foreach(var lib in mod.libs){
+				Debug.Log("Library: "+lib);
+			}
 			ApplyMod( mod );
 		}
 		
 		public void ApplyMod( XCMod mod )
 		{	
-			Debug.Log ("Applying mod " + mod);
 			PBXGroup modGroup = this.GetGroup( mod.group );
 			
 			Debug.Log( "Adding libraries..." );
 			
 			foreach( XCModFile libRef in mod.libs ) {
 				string completeLibPath = System.IO.Path.Combine( "usr/lib", libRef.filePath );
-				//Debug.Log ("Adding library " + completeLibPath);
+				Debug.Log ("Adding library " + completeLibPath);
 				this.AddFile( completeLibPath, modGroup, "SDKROOT", true, libRef.isWeak );
 			}
 			
@@ -634,7 +654,7 @@ namespace UnityEditor.XCodeEditor
 			
 			Debug.Log( "Adding folders..." );
 			foreach( string folderPath in mod.folders ) {
-				string absoluteFolderPath = System.IO.Path.Combine( mod.path, folderPath );
+				string absoluteFolderPath = System.IO.Path.Combine( Application.dataPath, folderPath );
 				Debug.Log ("Adding folder " + absoluteFolderPath);
 				this.AddFolder( absoluteFolderPath, modGroup, (string[])mod.excludes.ToArray( typeof(string) ) );
 			}
