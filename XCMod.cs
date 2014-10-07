@@ -28,7 +28,7 @@ namespace UnityEditor.XCodeEditor
 		
 		public ArrayList libs {
 			get {
-				if( _libs == null || _libs.Count == 0) {
+				if( _libs == null ) {
 					_libs = new ArrayList( ((ArrayList)_datastore["libs"]).Count );
 					foreach( string fileRef in (ArrayList)_datastore["libs"] ) {
 						_libs.Add( new XCModFile( fileRef ) );
