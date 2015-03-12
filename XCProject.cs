@@ -438,7 +438,62 @@ namespace UnityEditor.XCodeEditor
 			return results;
 		}
 
-		public PBXDictionary AddEmbedFramework( string fileName)
+		public PBXNativeTarget GetNativeTarget( string name )
+		{
+			PBXNativeTarget naviTarget = null;
+			foreach( KeyValuePair<string, PBXNativeTarget> currentObject in nativeTargets ) {
+				string targetName = (string)currentObject.Value.data["name"];
+				if (targetName == name) {
+					naviTarget = currentObject.Value;
+					break;
+				}
+			}
+			return naviTarget;
+		}
+
+		public int GetBuildActionMask()
+		{
+			int buildActionMask = 0;
+			foreach( var currentObject in copyBuildPhases ) 
+			{
+				buildActionMask = (int)currentObject.Value.data["buildActionMask"];
+				break;
+			}
+			return buildActionMask;
+		}
+
+		public PBXCopyFilesBuildPhase AddEmbedFrameworkBuildPhase()
+		{
+			PBXCopyFilesBuildPhase phase = null;
+
+			PBXNativeTarget naviTarget = GetNativeTarget("Unity-iPhone");
+			if (naviTarget == null)
+			{
+				Debug.Log("Not found Correct NativeTarget.");
+				return phase;
+			}
+
+			//check if embed framework buildPhase exist
+			foreach( var currentObject in copyBuildPhases ) 
+			{
+				object nameObj = null;
+				if (currentObject.Value.data.TryGetValue("name", out nameObj))
+				{
+					string name = (string)nameObj;
+					if (name == "Embed Frameworks")
+						return currentObject.Value;
+				}
+			}
+
+			int buildActionMask = this.GetBuildActionMask();
+			phase = new PBXCopyFilesBuildPhase(buildActionMask);
+			var buildPhases = (ArrayList)naviTarget.data["buildPhases"];
+			buildPhases.Add(phase.guid);//add build phase
+			copyBuildPhases.Add(phase);
+			return phase;
+		}
+
+		public void AddEmbedFramework( string fileName)
 		{
 			Debug.Log( "Add Embed Framework: " + fileName );
 
@@ -446,49 +501,22 @@ namespace UnityEditor.XCodeEditor
 			PBXFileReference fileReference = GetFile( System.IO.Path.GetFileName( fileName ) );	
 			if( fileReference == null ) {
 				Debug.Log("Embed Framework must added already: " + fileName);
-				return null;
+				return;
 			}
 
-			//This a new build Setting
-			this.overwriteBuildSetting("LD_RUNPATH_SEARCH_PATHS", "$(inherited) @executable_path/Frameworks", "Release");
-			this.overwriteBuildSetting("LD_RUNPATH_SEARCH_PATHS", "$(inherited) @executable_path/Frameworks", "Debug");
-
-			PBXNativeTarget naviTarget = null;
-			foreach( KeyValuePair<string, PBXNativeTarget> currentObject in nativeTargets ) {
-//				Debug.Log( "PBXNativeTarget key: " + currentObject.Key);
-				string targetName = (string)currentObject.Value.data["name"];
-				Debug.Log( "PBXNativeTarget: " + targetName );
-				if (targetName == "Unity-iPhone")
-				{
-					naviTarget = currentObject.Value;
-					break;
-				}
-			}
-			if (naviTarget == null)
+			var embedPhase = this.AddEmbedFrameworkBuildPhase();
+			if (embedPhase == null)
 			{
-				Debug.Log("Not found Correct NativeTarget.");
-				return null;
+				Debug.Log("AddEmbedFrameworkBuildPhase Failed.");
+				return;
 			}
-			//1. add PBXNativeTarget named Embed Frameworks in Unity-iPhone
-			var buildPhases = (ArrayList)naviTarget.data["buildPhases"];
-			//2. add Embed phase
-			//settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); };
+
+			//create a build file
 			PBXBuildFile buildFile = new PBXBuildFile( fileReference );
-			buildFiles.Add( buildFile );//3. create and add a build file
 			buildFile.AddCodeSignOnCopy();
+			buildFiles.Add( buildFile );
 
-			int buildActionMask = 0;
-			foreach( var currentObject in copyBuildPhases ) 
-			{
-				buildActionMask = (int)currentObject.Value.data["buildActionMask"];
-				break;
-			}
-			var embedPhase = new PBXCopyFilesBuildPhase(buildActionMask, buildFile);//3. add embed framework files
-
-			buildPhases.Add(embedPhase.guid);//add native target
-			copyBuildPhases.Add(embedPhase);
-
-			return null;
+			embedPhase.AddBuildFile(buildFile);
 		}
 
 		private void BuildAddFile (PBXFileReference fileReference, KeyValuePair<string, PBXFrameworksBuildPhase> currentObject,bool weak)
@@ -708,9 +736,12 @@ namespace UnityEditor.XCodeEditor
 			Debug.Log( "Adding embed binaries..." );
 			if (mod.embed_binaries != null)
 			{
+				//1. Add LD_RUNPATH_SEARCH_PATHS for embed framework
+				this.overwriteBuildSetting("LD_RUNPATH_SEARCH_PATHS", "$(inherited) @executable_path/Frameworks", "Release");
+				this.overwriteBuildSetting("LD_RUNPATH_SEARCH_PATHS", "$(inherited) @executable_path/Frameworks", "Debug");
+
 				foreach( string binary in mod.embed_binaries ) {
 					string absoluteFilePath = System.IO.Path.Combine( mod.path, binary );
-//					this.AddFile( absoluteFilePath, null, "SOURCE_ROOT", true, false, true );
 					this.AddEmbedFramework(absoluteFilePath);
 				}
 			}
