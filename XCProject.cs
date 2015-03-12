@@ -449,6 +449,10 @@ namespace UnityEditor.XCodeEditor
 				return null;
 			}
 
+			//This a new build Setting
+			this.overwriteBuildSetting("LD_RUNPATH_SEARCH_PATHS", "$(inherited) @executable_path/Frameworks", "Release");
+			this.overwriteBuildSetting("LD_RUNPATH_SEARCH_PATHS", "$(inherited) @executable_path/Frameworks", "Debug");
+
 			PBXNativeTarget naviTarget = null;
 			foreach( KeyValuePair<string, PBXNativeTarget> currentObject in nativeTargets ) {
 //				Debug.Log( "PBXNativeTarget key: " + currentObject.Key);
