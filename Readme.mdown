@@ -25,6 +25,7 @@ In these setting files, specify the fields using a json pattern.
 * excludes：Regular expression pattern. Matched files will not be added.
 * compiler_flags: Compiler flags which should be added, e.g. "-Wno-vexing-parse"
 * linker_flags: Linker flags which should be added, e.g. "-ObjC"
+* embed_binaries: Optional fields, support XCode 6+ `Embed Framework` feature. Notice: The frameworks must added already in `frameworks` or `files` fields.
 
 Use : for folders and files to add compiler flags to those files. For example: `path/to/my/folder:-fobjc-arc` or `path/to/my/file.m:-fobjc-arc`. You can add multiple compiler flags by using , to seperate them, too.
 
@@ -40,7 +41,8 @@ One example, the following file will add all files in /iOS/KKKeychain to the Xco
     "folders": ["iOS/KKKeychain/"],    
     "excludes": ["^.*.meta$", "^.*.mdown$", "^.*.pdf$"],
     "compiler_flags": [],
-    "linker_flags": []
+    "linker_flags": [],
+    "embed_binaries": []
 }
 ```
 

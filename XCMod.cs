@@ -80,6 +80,12 @@ namespace UnityEditor.XCodeEditor
 				return (ArrayList)_datastore["linker_flags"];
 			}
 		}
+
+		public ArrayList embed_binaries {
+			get {
+				return (ArrayList)_datastore["embed_binaries"];
+			}
+		}
 		
 		public XCMod( string filename )
 		{	

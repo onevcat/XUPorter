@@ -81,6 +81,28 @@ namespace UnityEditor.XCodeEditor
 			
 			return true;
 		}
+
+		//CodeSignOnCopy
+		public bool AddCodeSignOnCopy()
+		{
+			if( !_data.ContainsKey( SETTINGS_KEY ) )
+				_data[ SETTINGS_KEY ] = new PBXDictionary();
+
+			var settings = _data[ SETTINGS_KEY ] as PBXDictionary;
+			if( !settings.ContainsKey( ATTRIBUTES_KEY ) ) {
+				var attributes = new PBXList();
+				attributes.Add( "CodeSignOnCopy" );
+				attributes.Add( "RemoveHeadersOnCopy" );
+				settings.Add( ATTRIBUTES_KEY, attributes );
+			}
+			else {
+				var attributes = settings[ ATTRIBUTES_KEY ] as PBXList;
+				attributes.Add( "CodeSignOnCopy" );
+				attributes.Add( "RemoveHeadersOnCopy" );
+			}
+			return true;		
+		}
+
 		
 		public bool AddCompilerFlag( string flag )
 		{
