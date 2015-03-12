@@ -88,6 +88,18 @@ namespace UnityEditor.XCodeEditor
 
 	public class PBXCopyFilesBuildPhase : PBXBuildPhase
 	{
+		//Embed Frameworks PBXCopyFilesBuildPhase constructor
+		//to make sure "isa" = "PBXCopyFilesBuildPhase"
+		public PBXCopyFilesBuildPhase( int buildActionMask, PBXBuildFile file ) :base()
+		{
+			this.Add("buildActionMask", buildActionMask);
+			this.Add("dstPath", "");
+			this.Add("dstSubfolderSpec", 10);
+			this.AddBuildFile(file);
+			this.Add("name", "Embed Frameworks");
+			this.Add("runOnlyForDeploymentPostprocessing", 0);
+		}
+
 		public PBXCopyFilesBuildPhase( string guid, PBXDictionary dictionary ) : base ( guid, dictionary )
 		{
 		}
