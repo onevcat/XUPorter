@@ -607,9 +607,8 @@ namespace UnityEditor.XCodeEditor
 				return true;
 			}
 
-			// FIX ME: Original regexp was: @"^[A-Za-z0-9_.]+$", we use modified regexp with '/-' allowed
-			//		   to workaround Unity bug when all PNGs had "Libraries/" (group name) added to their paths after append
-			if( !Regex.IsMatch( aString, @"^[A-Za-z0-9_./-]+$" ) ) {
+			// Escape any string values that don't match the following
+			if( !Regex.IsMatch( aString, @"^[A-Za-z0-9_./]+$" ) ) {
 				useQuotes = true;
 			}
 
