@@ -2,6 +2,7 @@ using UnityEngine;
 using UnityEditor;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using System.IO;
 using System.Text.RegularExpressions;
 
@@ -376,15 +377,28 @@ namespace UnityEditor.XCodeEditor
 			//Check if there is already a file
 			PBXFileReference fileReference = GetFile( System.IO.Path.GetFileName( filePath ) );	
 			if( fileReference != null ) {
-				Debug.Log("File already exists: " + filePath); //not a warning, because this is normal for most builds!
-				return null;
+				PBXFileReference newFileReference = new PBXFileReference( filePath, (TreeEnum)System.Enum.Parse( typeof(TreeEnum), tree ) );
+
+				// Patch up compiler flags if different
+				fileReference.compilerFlags = newFileReference.compilerFlags;
+
+				// Check the incoming file wants to be part of a build phase, existing one could be empty
+				if (fileReference.buildPhase != newFileReference.buildPhase) {
+					Debug.Log("File build phase has changed adding: " + filePath);
+					fileReference.buildPhase = newFileReference.buildPhase;
+				} else {
+					Debug.Log("File already exists: " + filePath); //not a warning, because this is normal for most builds!
+					return null;
+				}
 			}
-			
-			fileReference = new PBXFileReference( filePath, (TreeEnum)System.Enum.Parse( typeof(TreeEnum), tree ) );
-			parent.AddChild( fileReference );
-			fileReferences.Add( fileReference );
-			results.Add( fileReference.guid, fileReference );
-			
+			else
+			{
+				fileReference = new PBXFileReference( filePath, (TreeEnum)System.Enum.Parse( typeof(TreeEnum), tree ) );
+				parent.AddChild( fileReference );
+				fileReferences.Add( fileReference );
+				results.Add( fileReference.guid, fileReference );
+			}
+
 			//Create a build file for reference
 			if( !string.IsNullOrEmpty( fileReference.buildPhase ) && createBuildFiles ) {
 				
@@ -519,35 +533,19 @@ namespace UnityEditor.XCodeEditor
 			embedPhase.AddBuildFile(buildFile);
 		}
 
-		private void BuildAddFile (PBXFileReference fileReference, KeyValuePair<string, PBXFrameworksBuildPhase> currentObject,bool weak)
+		private void BuildAddFile<T>(PBXFileReference fileReference, KeyValuePair<string, T> currentObject,bool weak) where T : PBXBuildPhase
 		{
-			PBXBuildFile buildFile = new PBXBuildFile( fileReference, weak );
-			buildFiles.Add( buildFile );
-			currentObject.Value.AddBuildFile( buildFile );
-		}
-		private void BuildAddFile (PBXFileReference fileReference, KeyValuePair<string, PBXResourcesBuildPhase> currentObject,bool weak)
-		{
-			PBXBuildFile buildFile = new PBXBuildFile( fileReference, weak );
-			buildFiles.Add( buildFile );
-			currentObject.Value.AddBuildFile( buildFile );
-		}
-		private void BuildAddFile (PBXFileReference fileReference, KeyValuePair<string, PBXShellScriptBuildPhase> currentObject,bool weak)
-		{
-			PBXBuildFile buildFile = new PBXBuildFile( fileReference, weak );
-			buildFiles.Add( buildFile );
-			currentObject.Value.AddBuildFile( buildFile );
-		}
-		private void BuildAddFile (PBXFileReference fileReference, KeyValuePair<string, PBXSourcesBuildPhase> currentObject,bool weak)
-		{
-			PBXBuildFile buildFile = new PBXBuildFile( fileReference, weak );
-			buildFiles.Add( buildFile );
-			currentObject.Value.AddBuildFile( buildFile );
-		}
-		private void BuildAddFile (PBXFileReference fileReference, KeyValuePair<string, PBXCopyFilesBuildPhase> currentObject,bool weak)
-		{
-			PBXBuildFile buildFile = new PBXBuildFile( fileReference, weak );
-			buildFiles.Add( buildFile );
-			currentObject.Value.AddBuildFile( buildFile );
+			PBXBuildFile buildFile = buildFiles.Values.Where(x => x.fileRef == fileReference.guid).FirstOrDefault();
+
+			if (buildFile == null) {
+				buildFile = new PBXBuildFile( fileReference, weak );
+				buildFiles.Add( buildFile );
+			} else {
+				buildFile.SetWeakLink(weak);
+			}
+
+			if (!currentObject.Value.HasBuildFile(buildFile.guid))
+				currentObject.Value.AddBuildFile( buildFile );
 		}
 		
 		public bool AddFolder( string folderPath, PBXGroup parent = null, string[] exclude = null, bool recursive = true, bool createBuildFile = true )
