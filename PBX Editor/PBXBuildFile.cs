@@ -68,16 +68,11 @@ namespace UnityEditor.XCodeEditor
 			else {
 				attributes = settings[ ATTRIBUTES_KEY ] as PBXList;
 			}
-			
+
+			attributes.Remove( WEAK_VALUE );
 			if( weak ) {
 				attributes.Add( WEAK_VALUE );
 			}
-			else {
-				attributes.Remove( WEAK_VALUE );
-			}
-			
-			settings.Add( ATTRIBUTES_KEY, attributes );
-			this.Add( SETTINGS_KEY, settings );
 			
 			return true;
 		}
