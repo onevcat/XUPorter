@@ -12,16 +12,11 @@ namespace UnityEditor.XCodeEditor
 		private const string WEAK_VALUE = "Weak";
 		private const string COMPILER_FLAGS_KEY = "COMPILER_FLAGS";
 		
-		public PBXBuildFile( PBXFileReference fileRef, bool weak = false ) : base()
+		public PBXBuildFile( PBXFileReference fileRef, bool weak = false, string[] compilerFlags = null ) : base()
 		{
 			this.Add( FILE_REF_KEY, fileRef.guid );
 			SetWeakLink( weak );
-			
-			if (!string.IsNullOrEmpty(fileRef.compilerFlags))
-			{
-				foreach (var flag in fileRef.compilerFlags.Split(','))
-					AddCompilerFlag(flag);
-			}
+			AddCompilerFlags(compilerFlags);
 		}
 		
 		public PBXBuildFile( string guid, PBXDictionary dictionary ) : base ( guid, dictionary )
@@ -68,16 +63,11 @@ namespace UnityEditor.XCodeEditor
 			else {
 				attributes = settings[ ATTRIBUTES_KEY ] as PBXList;
 			}
-			
+
+			attributes.Remove( WEAK_VALUE );
 			if( weak ) {
 				attributes.Add( WEAK_VALUE );
 			}
-			else {
-				attributes.Remove( WEAK_VALUE );
-			}
-			
-			settings.Add( ATTRIBUTES_KEY, attributes );
-			this.Add( SETTINGS_KEY, settings );
 			
 			return true;
 		}
@@ -104,23 +94,35 @@ namespace UnityEditor.XCodeEditor
 		}
 
 		
-		public bool AddCompilerFlag( string flag )
+		public bool AddCompilerFlags( params string[] flags )
 		{
-			if( !_data.ContainsKey( SETTINGS_KEY ) )
-				_data[ SETTINGS_KEY ] = new PBXDictionary();
+			if( flags == null || flags.Length == 0)
+				return false;
+
+            object settingsObject;
+			PBXDictionary settings;
+
+            if( !_data.TryGetValue( SETTINGS_KEY, out settingsObject ) ) {
+				settings = new PBXDictionary();
+				_data[ SETTINGS_KEY ] = settings;
+			} else
+                settings = settingsObject as PBXDictionary;
 			
-			if( !((PBXDictionary)_data[ SETTINGS_KEY ]).ContainsKey( COMPILER_FLAGS_KEY ) ) {
-				((PBXDictionary)_data[ SETTINGS_KEY ]).Add( COMPILER_FLAGS_KEY, flag );
-				return true;
+			List<string> currentFlags = null;
+			if( settings.ContainsKey( COMPILER_FLAGS_KEY ) ) {
+                // merge specified with existing
+				currentFlags = new List<string>(((string)settings[ COMPILER_FLAGS_KEY ]).Split( ' ' ));
+
+				foreach( string flag in flags ) {
+					if( !currentFlags.Contains(flag) )
+                        currentFlags.Add(flag);
+				}
+			} else {
+				// no current flags so just use ones specified
+				currentFlags = new List<string>(flags);
 			}
-			
-			string[] flags = ((string)((PBXDictionary)_data[ SETTINGS_KEY ])[ COMPILER_FLAGS_KEY ]).Split( ' ' );
-			foreach( string item in flags ) {
-				if( item.CompareTo( flag ) == 0 )
-					return false;
-			}
-			
-			((PBXDictionary)_data[ SETTINGS_KEY ])[ COMPILER_FLAGS_KEY ] = ( string.Join( " ", flags ) + " " + flag );
+
+			settings[ COMPILER_FLAGS_KEY ] = string.Join( " ", currentFlags.ToArray() );
 			return true;
 		}
 		

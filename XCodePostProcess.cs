@@ -13,8 +13,11 @@ public static class XCodePostProcess
 	[PostProcessBuild(999)]
 	public static void OnPostProcessBuild( BuildTarget target, string pathToBuiltProject )
 	{
-		if (target != BuildTarget.iPhone) {
-			Debug.LogWarning("Target is not iPhone. XCodePostProcess will not run");
+#if UNITY_5
+		if (target != BuildTarget.iOS) {
+#else
+        if (target != BuildTarget.iPhone) {
+#endif
 			return;
 		}
 

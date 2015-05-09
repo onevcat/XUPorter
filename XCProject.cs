@@ -2,6 +2,7 @@ using UnityEngine;
 using UnityEditor;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using System.IO;
 using System.Text.RegularExpressions;
 
@@ -334,7 +335,7 @@ namespace UnityEditor.XCodeEditor
 			return _objects[guid];
 		}
 		
-		public PBXDictionary AddFile( string filePath, PBXGroup parent = null, string tree = "SOURCE_ROOT", bool createBuildFiles = true, bool weak = false )
+		public PBXDictionary AddFile( string filePath, PBXGroup parent = null, string tree = "SOURCE_ROOT", bool createBuildFiles = true, bool weak = false, params string[] compilerFlags )
 		{
 			//Debug.Log("AddFile " + filePath + ", " + parent + ", " + tree + ", " + (createBuildFiles? "TRUE":"FALSE") + ", " + (weak? "TRUE":"FALSE") ); 
 			
@@ -376,22 +377,34 @@ namespace UnityEditor.XCodeEditor
 			//Check if there is already a file
 			PBXFileReference fileReference = GetFile( System.IO.Path.GetFileName( filePath ) );	
 			if( fileReference != null ) {
-				Debug.Log("File already exists: " + filePath); //not a warning, because this is normal for most builds!
-				return null;
+				PBXFileReference newFileReference = new PBXFileReference( filePath, (TreeEnum)System.Enum.Parse( typeof(TreeEnum), tree ) );
+
+				// Check the incoming file wants to be part of a build phase, existing one could be empty
+				if (fileReference.buildPhase != newFileReference.buildPhase) {
+					Debug.Log("File build phase has changed adding: " + filePath);
+					fileReference.buildPhase = newFileReference.buildPhase;
+                } else if(compilerFlags != null && compilerFlags.Length > 0) {
+                    // Need to modify build files that references this file to add compiler flags
+                } else {
+					Debug.Log("File already exists: " + filePath); //not a warning, because this is normal for most builds!
+					return null;
+				}
 			}
-			
-			fileReference = new PBXFileReference( filePath, (TreeEnum)System.Enum.Parse( typeof(TreeEnum), tree ) );
-			parent.AddChild( fileReference );
-			fileReferences.Add( fileReference );
-			results.Add( fileReference.guid, fileReference );
-			
+			else
+			{
+				fileReference = new PBXFileReference( filePath, (TreeEnum)System.Enum.Parse( typeof(TreeEnum), tree ) );
+				parent.AddChild( fileReference );
+				fileReferences.Add( fileReference );
+				results.Add( fileReference.guid, fileReference );
+			}
+
 			//Create a build file for reference
 			if( !string.IsNullOrEmpty( fileReference.buildPhase ) && createBuildFiles ) {
 				
 				switch( fileReference.buildPhase ) {
 					case "PBXFrameworksBuildPhase":
 						foreach( KeyValuePair<string, PBXFrameworksBuildPhase> currentObject in frameworkBuildPhases ) {
-							BuildAddFile(fileReference,currentObject,weak);
+							BuildAddFile(fileReference,currentObject,weak,compilerFlags);
 						}
 						if ( !string.IsNullOrEmpty( absPath ) && ( tree.CompareTo( "SOURCE_ROOT" ) == 0 )) {
 							string libraryPath = Path.Combine( "$(SRCROOT)", Path.GetDirectoryName( filePath ) );
@@ -406,25 +419,25 @@ namespace UnityEditor.XCodeEditor
 					case "PBXResourcesBuildPhase":
 						foreach( KeyValuePair<string, PBXResourcesBuildPhase> currentObject in resourcesBuildPhases ) {
 							Debug.Log( "Adding Resources Build File" );
-							BuildAddFile(fileReference,currentObject,weak);
+							BuildAddFile(fileReference,currentObject,weak,compilerFlags);
 						}
 						break;
 					case "PBXShellScriptBuildPhase":
 						foreach( KeyValuePair<string, PBXShellScriptBuildPhase> currentObject in shellScriptBuildPhases ) {
 							Debug.Log( "Adding Script Build File" );
-							BuildAddFile(fileReference,currentObject,weak);
+							BuildAddFile(fileReference,currentObject,weak,compilerFlags);
 						}
 						break;
 					case "PBXSourcesBuildPhase":
 						foreach( KeyValuePair<string, PBXSourcesBuildPhase> currentObject in sourcesBuildPhases ) {
 							Debug.Log( "Adding Source Build File" );
-							BuildAddFile(fileReference,currentObject,weak);
+							BuildAddFile(fileReference,currentObject,weak,compilerFlags);
 						}
 						break;
 					case "PBXCopyFilesBuildPhase":
 						foreach( KeyValuePair<string, PBXCopyFilesBuildPhase> currentObject in copyBuildPhases ) {
 							Debug.Log( "Adding Copy Files Build Phase" );
-							BuildAddFile(fileReference,currentObject,weak);
+							BuildAddFile(fileReference,currentObject,weak,compilerFlags);
 						}
 						break;
 					case null:
@@ -519,35 +532,20 @@ namespace UnityEditor.XCodeEditor
 			embedPhase.AddBuildFile(buildFile);
 		}
 
-		private void BuildAddFile (PBXFileReference fileReference, KeyValuePair<string, PBXFrameworksBuildPhase> currentObject,bool weak)
+		private void BuildAddFile<T>(PBXFileReference fileReference, KeyValuePair<string, T> currentObject,bool weak, string[] compilerFlags) where T : PBXBuildPhase
 		{
-			PBXBuildFile buildFile = new PBXBuildFile( fileReference, weak );
-			buildFiles.Add( buildFile );
-			currentObject.Value.AddBuildFile( buildFile );
-		}
-		private void BuildAddFile (PBXFileReference fileReference, KeyValuePair<string, PBXResourcesBuildPhase> currentObject,bool weak)
-		{
-			PBXBuildFile buildFile = new PBXBuildFile( fileReference, weak );
-			buildFiles.Add( buildFile );
-			currentObject.Value.AddBuildFile( buildFile );
-		}
-		private void BuildAddFile (PBXFileReference fileReference, KeyValuePair<string, PBXShellScriptBuildPhase> currentObject,bool weak)
-		{
-			PBXBuildFile buildFile = new PBXBuildFile( fileReference, weak );
-			buildFiles.Add( buildFile );
-			currentObject.Value.AddBuildFile( buildFile );
-		}
-		private void BuildAddFile (PBXFileReference fileReference, KeyValuePair<string, PBXSourcesBuildPhase> currentObject,bool weak)
-		{
-			PBXBuildFile buildFile = new PBXBuildFile( fileReference, weak );
-			buildFiles.Add( buildFile );
-			currentObject.Value.AddBuildFile( buildFile );
-		}
-		private void BuildAddFile (PBXFileReference fileReference, KeyValuePair<string, PBXCopyFilesBuildPhase> currentObject,bool weak)
-		{
-			PBXBuildFile buildFile = new PBXBuildFile( fileReference, weak );
-			buildFiles.Add( buildFile );
-			currentObject.Value.AddBuildFile( buildFile );
+			PBXBuildFile buildFile = buildFiles.Values.Where(x => x.fileRef == fileReference.guid).FirstOrDefault();
+
+			if (buildFile == null) {
+				buildFile = new PBXBuildFile( fileReference, weak, compilerFlags );
+				buildFiles.Add( buildFile );
+			} else {
+				buildFile.SetWeakLink(weak);
+				buildFile.AddCompilerFlags(compilerFlags);
+			}
+
+			if (!currentObject.Value.HasBuildFile(buildFile.guid))
+				currentObject.Value.AddBuildFile( buildFile );
 		}
 		
 		public bool AddFolder( string folderPath, PBXGroup parent = null, string[] exclude = null, bool recursive = true, bool createBuildFile = true )
@@ -678,9 +676,11 @@ namespace UnityEditor.XCodeEditor
 			
 			foreach( KeyValuePair<string, PBXGroup> current in groups ) {
 				if( string.IsNullOrEmpty( current.Value.name ) ) { 
-					if( current.Value.path.CompareTo( name ) == 0 && parent.HasChild( current.Key ) ) {
-						return current.Value;
-					}
+                    if( !string.IsNullOrEmpty( current.Value.path ) ) {
+    					if( current.Value.path.CompareTo( name ) == 0 && parent.HasChild( current.Key ) ) {
+    						return current.Value;
+    					}
+                    }
 				} else if( current.Value.name.CompareTo( name ) == 0 && parent.HasChild( current.Key ) ) {
 					return current.Value;
 				}
@@ -709,70 +709,91 @@ namespace UnityEditor.XCodeEditor
 		public void ApplyMod( XCMod mod )
 		{	
 			PBXGroup modGroup = this.GetGroup( mod.group );
-			
-			Debug.Log( "Adding libraries..." );
-			
-			foreach( XCModFile libRef in mod.libs ) {
-				string completeLibPath = System.IO.Path.Combine( "usr/lib", libRef.filePath );
-				Debug.Log ("Adding library " + completeLibPath);
-				this.AddFile( completeLibPath, modGroup, "SDKROOT", true, libRef.isWeak );
-			}
-			
-			Debug.Log( "Adding frameworks..." );
-			PBXGroup frameworkGroup = this.GetGroup( "Frameworks" );
-			foreach( string framework in mod.frameworks ) {
-				string[] filename = framework.Split( ':' );
-				bool isWeak = ( filename.Length > 1 ) ? true : false;
-				string completePath = System.IO.Path.Combine( "System/Library/Frameworks", filename[0] );
-				this.AddFile( completePath, frameworkGroup, "SDKROOT", true, isWeak );
-			}
 
-			Debug.Log( "Adding files..." );
-			foreach( string filePath in mod.files ) {
-				string absoluteFilePath = System.IO.Path.Combine( mod.path, filePath );
-				this.AddFile( absoluteFilePath, modGroup );
-			}
-
-			Debug.Log( "Adding embed binaries..." );
-			if (mod.embed_binaries != null)
-			{
-				//1. Add LD_RUNPATH_SEARCH_PATHS for embed framework
-				this.overwriteBuildSetting("LD_RUNPATH_SEARCH_PATHS", "$(inherited) @executable_path/Frameworks", "Release");
-				this.overwriteBuildSetting("LD_RUNPATH_SEARCH_PATHS", "$(inherited) @executable_path/Frameworks", "Debug");
-
-				foreach( string binary in mod.embed_binaries ) {
-					string absoluteFilePath = System.IO.Path.Combine( mod.path, binary );
-					this.AddEmbedFramework(absoluteFilePath);
-				}
-			}
-			
-			Debug.Log( "Adding folders..." );
-			foreach( string folderPath in mod.folders ) {
-				string absoluteFolderPath = System.IO.Path.Combine( Application.dataPath, folderPath );
-				Debug.Log ("Adding folder " + absoluteFolderPath);
-				this.AddFolder( absoluteFolderPath, modGroup, (string[])mod.excludes.ToArray( typeof(string) ) );
-			}
-			
-			Debug.Log( "Adding headerpaths..." );
-			foreach( string headerpath in mod.headerpaths ) {
-				if (headerpath.Contains("$(inherited)")) {
-					Debug.Log ("not prepending a path to " + headerpath);
-					this.AddHeaderSearchPaths( headerpath );
-				} else {
-					string absoluteHeaderPath = System.IO.Path.Combine( mod.path, headerpath );
-					this.AddHeaderSearchPaths( absoluteHeaderPath );
+			if (mod.libs != null) {
+				Debug.Log( "Adding libraries..." );
+				
+				foreach( XCModFile libRef in mod.libs ) {
+					string completeLibPath = System.IO.Path.Combine( "usr/lib", libRef.filePath );
+					Debug.Log ("Adding library " + completeLibPath);
+					this.AddFile( completeLibPath, modGroup, "SDKROOT", true, libRef.isWeak );
 				}
 			}
 
-			Debug.Log( "Adding compiler flags..." );
-			foreach( string flag in mod.compiler_flags ) {
-				this.AddOtherCFlags( flag );
+			if (mod.frameworks != null) {
+				Debug.Log( "Adding frameworks..." );
+				PBXGroup frameworkGroup = this.GetGroup( "Frameworks" );
+				foreach( string framework in mod.frameworks ) {
+					string[] filename = framework.Split( ':' );
+					bool isWeak = ( filename.Length > 1 ) ? true : false;
+					string completePath = System.IO.Path.Combine( "System/Library/Frameworks", filename[0] );
+					this.AddFile( completePath, frameworkGroup, "SDKROOT", true, isWeak );
+				}
 			}
 
-			Debug.Log( "Adding linker flags..." );
-			foreach( string flag in mod.linker_flags ) {
-				this.AddOtherLinkerFlags( flag );
+			if (mod.files != null) {
+				Debug.Log( "Adding files..." );
+				foreach( string filePath in mod.files ) {
+					string[] filename = filePath.Split( ':' );
+					string[] compileFlags = null;
+					if (filename.Length > 1)
+						compileFlags = filename[1].Split(',');
+					string absoluteFilePath = System.IO.Path.Combine( mod.path, filename[0] );
+					this.AddFile( absoluteFilePath, modGroup, "SOURCE_ROOT", true, false, compileFlags );
+				}
 			}
+
+			if (mod.embed_binaries != null) {
+				Debug.Log( "Adding embed binaries..." );
+				if (mod.embed_binaries != null)
+				{
+					//1. Add LD_RUNPATH_SEARCH_PATHS for embed framework
+					this.overwriteBuildSetting("LD_RUNPATH_SEARCH_PATHS", "$(inherited) @executable_path/Frameworks", "Release");
+					this.overwriteBuildSetting("LD_RUNPATH_SEARCH_PATHS", "$(inherited) @executable_path/Frameworks", "Debug");
+
+					foreach( string binary in mod.embed_binaries ) {
+						string absoluteFilePath = System.IO.Path.Combine( mod.path, binary );
+						this.AddEmbedFramework(absoluteFilePath);
+					}
+				}
+			}
+
+			if (mod.folders != null) {
+				Debug.Log( "Adding folders..." );
+				foreach( string folderPath in mod.folders ) {
+					string absoluteFolderPath = System.IO.Path.Combine( Application.dataPath, folderPath );
+					Debug.Log ("Adding folder " + absoluteFolderPath);
+					this.AddFolder( absoluteFolderPath, modGroup, (string[])mod.excludes.ToArray( typeof(string) ) );
+				}
+			}
+
+			if (mod.headerpaths != null) {
+				Debug.Log( "Adding headerpaths..." );
+				foreach( string headerpath in mod.headerpaths ) {
+					if (headerpath.Contains("$(inherited)")) {
+						Debug.Log ("not prepending a path to " + headerpath);
+						this.AddHeaderSearchPaths( headerpath );
+					} else {
+						string absoluteHeaderPath = System.IO.Path.Combine( mod.path, headerpath );
+						this.AddHeaderSearchPaths( absoluteHeaderPath );
+					}
+				}
+			}
+
+			if (mod.compiler_flags != null) {
+				Debug.Log( "Adding compiler flags..." );
+				foreach( string flag in mod.compiler_flags ) {
+					this.AddOtherCFlags( flag );
+				}
+			}
+
+			if (mod.linker_flags != null) {
+				Debug.Log( "Adding linker flags..." );
+				foreach( string flag in mod.linker_flags ) {
+					this.AddOtherLinkerFlags( flag );
+				}
+			}
+
 
 			this.Consolidate();
 		}
