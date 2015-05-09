@@ -335,7 +335,7 @@ namespace UnityEditor.XCodeEditor
 			return _objects[guid];
 		}
 		
-		public PBXDictionary AddFile( string filePath, PBXGroup parent = null, string tree = "SOURCE_ROOT", bool createBuildFiles = true, bool weak = false )
+		public PBXDictionary AddFile( string filePath, PBXGroup parent = null, string tree = "SOURCE_ROOT", bool createBuildFiles = true, bool weak = false, params string[] compilerFlags )
 		{
 			//Debug.Log("AddFile " + filePath + ", " + parent + ", " + tree + ", " + (createBuildFiles? "TRUE":"FALSE") + ", " + (weak? "TRUE":"FALSE") ); 
 			
@@ -379,14 +379,13 @@ namespace UnityEditor.XCodeEditor
 			if( fileReference != null ) {
 				PBXFileReference newFileReference = new PBXFileReference( filePath, (TreeEnum)System.Enum.Parse( typeof(TreeEnum), tree ) );
 
-				// Patch up compiler flags if different
-				fileReference.compilerFlags = newFileReference.compilerFlags;
-
 				// Check the incoming file wants to be part of a build phase, existing one could be empty
 				if (fileReference.buildPhase != newFileReference.buildPhase) {
 					Debug.Log("File build phase has changed adding: " + filePath);
 					fileReference.buildPhase = newFileReference.buildPhase;
-				} else {
+                } else if(compilerFlags != null && compilerFlags.Length > 0) {
+                    // Need to modify build files that references this file to add compiler flags
+                } else {
 					Debug.Log("File already exists: " + filePath); //not a warning, because this is normal for most builds!
 					return null;
 				}
@@ -405,7 +404,7 @@ namespace UnityEditor.XCodeEditor
 				switch( fileReference.buildPhase ) {
 					case "PBXFrameworksBuildPhase":
 						foreach( KeyValuePair<string, PBXFrameworksBuildPhase> currentObject in frameworkBuildPhases ) {
-							BuildAddFile(fileReference,currentObject,weak);
+							BuildAddFile(fileReference,currentObject,weak,compilerFlags);
 						}
 						if ( !string.IsNullOrEmpty( absPath ) && ( tree.CompareTo( "SOURCE_ROOT" ) == 0 )) {
 							string libraryPath = Path.Combine( "$(SRCROOT)", Path.GetDirectoryName( filePath ) );
@@ -420,25 +419,25 @@ namespace UnityEditor.XCodeEditor
 					case "PBXResourcesBuildPhase":
 						foreach( KeyValuePair<string, PBXResourcesBuildPhase> currentObject in resourcesBuildPhases ) {
 							Debug.Log( "Adding Resources Build File" );
-							BuildAddFile(fileReference,currentObject,weak);
+							BuildAddFile(fileReference,currentObject,weak,compilerFlags);
 						}
 						break;
 					case "PBXShellScriptBuildPhase":
 						foreach( KeyValuePair<string, PBXShellScriptBuildPhase> currentObject in shellScriptBuildPhases ) {
 							Debug.Log( "Adding Script Build File" );
-							BuildAddFile(fileReference,currentObject,weak);
+							BuildAddFile(fileReference,currentObject,weak,compilerFlags);
 						}
 						break;
 					case "PBXSourcesBuildPhase":
 						foreach( KeyValuePair<string, PBXSourcesBuildPhase> currentObject in sourcesBuildPhases ) {
 							Debug.Log( "Adding Source Build File" );
-							BuildAddFile(fileReference,currentObject,weak);
+							BuildAddFile(fileReference,currentObject,weak,compilerFlags);
 						}
 						break;
 					case "PBXCopyFilesBuildPhase":
 						foreach( KeyValuePair<string, PBXCopyFilesBuildPhase> currentObject in copyBuildPhases ) {
 							Debug.Log( "Adding Copy Files Build Phase" );
-							BuildAddFile(fileReference,currentObject,weak);
+							BuildAddFile(fileReference,currentObject,weak,compilerFlags);
 						}
 						break;
 					case null:
@@ -533,15 +532,16 @@ namespace UnityEditor.XCodeEditor
 			embedPhase.AddBuildFile(buildFile);
 		}
 
-		private void BuildAddFile<T>(PBXFileReference fileReference, KeyValuePair<string, T> currentObject,bool weak) where T : PBXBuildPhase
+		private void BuildAddFile<T>(PBXFileReference fileReference, KeyValuePair<string, T> currentObject,bool weak, string[] compilerFlags) where T : PBXBuildPhase
 		{
 			PBXBuildFile buildFile = buildFiles.Values.Where(x => x.fileRef == fileReference.guid).FirstOrDefault();
 
 			if (buildFile == null) {
-				buildFile = new PBXBuildFile( fileReference, weak );
+				buildFile = new PBXBuildFile( fileReference, weak, compilerFlags );
 				buildFiles.Add( buildFile );
 			} else {
 				buildFile.SetWeakLink(weak);
+				buildFile.AddCompilerFlags(compilerFlags);
 			}
 
 			if (!currentObject.Value.HasBuildFile(buildFile.guid))
@@ -676,9 +676,11 @@ namespace UnityEditor.XCodeEditor
 			
 			foreach( KeyValuePair<string, PBXGroup> current in groups ) {
 				if( string.IsNullOrEmpty( current.Value.name ) ) { 
-					if( current.Value.path.CompareTo( name ) == 0 && parent.HasChild( current.Key ) ) {
-						return current.Value;
-					}
+                    if( !string.IsNullOrEmpty( current.Value.path ) ) {
+    					if( current.Value.path.CompareTo( name ) == 0 && parent.HasChild( current.Key ) ) {
+    						return current.Value;
+    					}
+                    }
 				} else if( current.Value.name.CompareTo( name ) == 0 && parent.HasChild( current.Key ) ) {
 					return current.Value;
 				}
@@ -732,8 +734,12 @@ namespace UnityEditor.XCodeEditor
 			if (mod.files != null) {
 				Debug.Log( "Adding files..." );
 				foreach( string filePath in mod.files ) {
-					string absoluteFilePath = System.IO.Path.Combine( mod.path, filePath );
-					this.AddFile( absoluteFilePath, modGroup );
+					string[] filename = filePath.Split( ':' );
+					string[] compileFlags = null;
+					if (filename.Length > 1)
+						compileFlags = filename[1].Split(',');
+					string absoluteFilePath = System.IO.Path.Combine( mod.path, filename[0] );
+					this.AddFile( absoluteFilePath, modGroup, "SOURCE_ROOT", true, false, compileFlags );
 				}
 			}
 
