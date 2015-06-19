@@ -86,6 +86,12 @@ namespace UnityEditor.XCodeEditor
 				return (ArrayList)_datastore["embed_binaries"];
 			}
 		}
+
+		public Hashtable plist {
+			get {
+				return (Hashtable)_datastore["plist"];
+			}
+		}
 		
 		public XCMod( string filename )
 		{	
