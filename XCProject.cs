@@ -274,8 +274,8 @@ namespace UnityEditor.XCodeEditor
 			foreach( KeyValuePair<string, XCBuildConfiguration> buildConfig in buildConfigurations ) {
 				//Debug.Log ("build config " + buildConfig);
 				XCBuildConfiguration b = buildConfig.Value;
-				if ( (string)b.data["name"] == buildConfigName || (string)b.data["name"] == "all") {
-					//Debug.Log ("found " + buildConfigName + " config");
+				if ( (string)b.data["name"] == buildConfigName || (string)buildConfigName == "all") {
+					//Debug.Log ("found " + b.data["name"] + " config");
 					buildConfig.Value.overwriteBuildSetting(settingName, newValue);
 					modified = true;
 				} else {
