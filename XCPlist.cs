@@ -41,6 +41,15 @@ namespace UnityEditor.XCodeEditor
 			}
 		}
 
+		// http://stackoverflow.com/questions/20618809/hashtable-to-dictionary
+		public static Dictionary<K,V> HashtableToDictionary<K,V> (Hashtable table)
+		{
+			Dictionary<K,V> dict = new Dictionary<K,V>();
+			foreach(DictionaryEntry kvp in table)
+				dict.Add((K)kvp.Key, (V)kvp.Value);
+			return dict;
+		}
+		
 		public void AddPlistItems(string key, object value, Dictionary<string, object> dict)
 		{
 			Debug.Log ("AddPlistItems: key=" + key);
@@ -51,7 +60,8 @@ namespace UnityEditor.XCodeEditor
 			}
 			else
 			{
-				Debug.LogWarning("unknown plist key : " + key);
+				dict[key] = HashtableToDictionary<string, object>((Hashtable)value);
+				plistModified = true;
 			}
 		}
 
