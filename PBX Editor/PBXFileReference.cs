@@ -46,7 +46,9 @@ namespace UnityEditor.XCodeEditor
 			{ ".xib", "file.xib" },
 			{ ".strings", "text.plist.strings" },
 			{ ".bundle", "wrapper.plug-in" },
-			{ ".dylib", "compiled.mach-o.dylib" }
+			{ ".dylib", "compiled.mach-o.dylib" },
+			{ ".tbd", "sourcecode.text-based-dylib-definition" },
+			{ ".json", "text.json" }
    		 };
 		
 		public static readonly Dictionary<string, string> typePhases = new Dictionary<string, string> {
@@ -67,11 +69,13 @@ namespace UnityEditor.XCodeEditor
 			{ ".rtf", "PBXResourcesBuildPhase" },
 			{ ".tiff", "PBXResourcesBuildPhase" },
 			{ ".txt", "PBXResourcesBuildPhase" },
+			{ ".json", "PBXResourcesBuildPhase" },
 			{ ".xcodeproj", null },
 			{ ".xib", "PBXResourcesBuildPhase" },
 			{ ".strings", "PBXResourcesBuildPhase" },
 			{ ".bundle", "PBXResourcesBuildPhase" },
-			{ ".dylib", "PBXFrameworksBuildPhase" }
+			{ ".dylib", "PBXFrameworksBuildPhase" },
+			{ ".tbd", "PBXFrameworksBuildPhase" }
     	};
 		
 		public PBXFileReference( string guid, PBXDictionary dictionary ) : base( guid, dictionary )

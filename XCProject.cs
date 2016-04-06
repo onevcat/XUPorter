@@ -274,8 +274,8 @@ namespace UnityEditor.XCodeEditor
 			foreach( KeyValuePair<string, XCBuildConfiguration> buildConfig in buildConfigurations ) {
 				//Debug.Log ("build config " + buildConfig);
 				XCBuildConfiguration b = buildConfig.Value;
-				if ( (string)b.data["name"] == buildConfigName || (string)b.data["name"] == "all") {
-					//Debug.Log ("found " + buildConfigName + " config");
+				if ( (string)b.data["name"] == buildConfigName || (string)buildConfigName == "all") {
+					//Debug.Log ("found " + b.data["name"] + " config");
 					buildConfig.Value.overwriteBuildSetting(settingName, newValue);
 					modified = true;
 				} else {
@@ -436,6 +436,87 @@ namespace UnityEditor.XCodeEditor
 				}
 			}
 			return results;
+		}
+
+		public PBXNativeTarget GetNativeTarget( string name )
+		{
+			PBXNativeTarget naviTarget = null;
+			foreach( KeyValuePair<string, PBXNativeTarget> currentObject in nativeTargets ) {
+				string targetName = (string)currentObject.Value.data["name"];
+				if (targetName == name) {
+					naviTarget = currentObject.Value;
+					break;
+				}
+			}
+			return naviTarget;
+		}
+
+		public int GetBuildActionMask()
+		{
+			int buildActionMask = 0;
+			foreach( var currentObject in copyBuildPhases ) 
+			{
+				buildActionMask = (int)currentObject.Value.data["buildActionMask"];
+				break;
+			}
+			return buildActionMask;
+		}
+
+		public PBXCopyFilesBuildPhase AddEmbedFrameworkBuildPhase()
+		{
+			PBXCopyFilesBuildPhase phase = null;
+
+			PBXNativeTarget naviTarget = GetNativeTarget("Unity-iPhone");
+			if (naviTarget == null)
+			{
+				Debug.Log("Not found Correct NativeTarget.");
+				return phase;
+			}
+
+			//check if embed framework buildPhase exist
+			foreach( var currentObject in copyBuildPhases ) 
+			{
+				object nameObj = null;
+				if (currentObject.Value.data.TryGetValue("name", out nameObj))
+				{
+					string name = (string)nameObj;
+					if (name == "Embed Frameworks")
+						return currentObject.Value;
+				}
+			}
+
+			int buildActionMask = this.GetBuildActionMask();
+			phase = new PBXCopyFilesBuildPhase(buildActionMask);
+			var buildPhases = (ArrayList)naviTarget.data["buildPhases"];
+			buildPhases.Add(phase.guid);//add build phase
+			copyBuildPhases.Add(phase);
+			return phase;
+		}
+
+		public void AddEmbedFramework( string fileName)
+		{
+			Debug.Log( "Add Embed Framework: " + fileName );
+
+			//Check if there is already a file
+			PBXFileReference fileReference = GetFile( System.IO.Path.GetFileName( fileName ) );	
+			if( fileReference == null ) {
+				Debug.Log("Embed Framework must added already: " + fileName);
+				return;
+			}
+
+			var embedPhase = this.AddEmbedFrameworkBuildPhase();
+			if (embedPhase == null)
+			{
+				Debug.Log("AddEmbedFrameworkBuildPhase Failed.");
+				return;
+			}
+
+			//create a build file
+			PBXBuildFile buildFile = new PBXBuildFile( fileReference );
+			buildFile.AddCodeSignOnCopy();
+			buildFiles.Add( buildFile );
+
+			embedPhase.AddBuildFile(buildFile);
 		}
 
 		private void BuildAddFile (PBXFileReference fileReference, KeyValuePair<string, PBXFrameworksBuildPhase> currentObject,bool weak)
@@ -645,11 +726,24 @@ namespace UnityEditor.XCodeEditor
 				string completePath = System.IO.Path.Combine( "System/Library/Frameworks", filename[0] );
 				this.AddFile( completePath, frameworkGroup, "SDKROOT", true, isWeak );
 			}
-			
+
 			Debug.Log( "Adding files..." );
 			foreach( string filePath in mod.files ) {
 				string absoluteFilePath = System.IO.Path.Combine( mod.path, filePath );
 				this.AddFile( absoluteFilePath, modGroup );
+			}
+
+			Debug.Log( "Adding embed binaries..." );
+			if (mod.embed_binaries != null)
+			{
+				//1. Add LD_RUNPATH_SEARCH_PATHS for embed framework
+				this.overwriteBuildSetting("LD_RUNPATH_SEARCH_PATHS", "$(inherited) @executable_path/Frameworks", "Release");
+				this.overwriteBuildSetting("LD_RUNPATH_SEARCH_PATHS", "$(inherited) @executable_path/Frameworks", "Debug");
+
+				foreach( string binary in mod.embed_binaries ) {
+					string absoluteFilePath = System.IO.Path.Combine( mod.path, binary );
+					this.AddEmbedFramework(absoluteFilePath);
+				}
 			}
 			
 			Debug.Log( "Adding folders..." );
@@ -679,7 +773,12 @@ namespace UnityEditor.XCodeEditor
 			foreach( string flag in mod.linker_flags ) {
 				this.AddOtherLinkerFlags( flag );
 			}
-			
+
+			Debug.Log ("Adding plist items...");
+			string plistPath = this.projectRootPath + "/Info.plist";
+			XCPlist plist = new XCPlist (plistPath);
+			plist.Process(mod.plist);
+
 			this.Consolidate();
 		}
 		
