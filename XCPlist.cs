@@ -41,14 +41,34 @@ namespace UnityEditor.XCodeEditor
 			}
 		}
 
-		// http://stackoverflow.com/questions/20618809/hashtable-to-dictionary
-		public static Dictionary<K,V> HashtableToDictionary<K,V> (Hashtable table)
-		{
-			Dictionary<K,V> dict = new Dictionary<K,V>();
-			foreach(DictionaryEntry kvp in table)
-				dict.Add((K)kvp.Key, (V)kvp.Value);
-			return dict;
-		}
+        private object formatPListObject(object value)
+        {
+            if (value is ArrayList)
+            {
+                ArrayList arrayList = (ArrayList)value;
+
+                List<object> list = new List<object>();
+                foreach (var obj in arrayList)
+                {
+                    list.Add(formatPListObject(obj));
+                }
+                return list;
+            }
+
+            if (value is Hashtable)
+            {
+                Hashtable hashTable = (Hashtable)value;
+
+                Dictionary<string, object> dic = new Dictionary<string, object>();
+                foreach (DictionaryEntry entry in hashTable)
+                {
+                    dic.Add(entry.Key.ToString(), formatPListObject(entry.Value));
+                }
+                return dic;
+            }
+
+            return value;
+        }
 		
 		public void AddPlistItems(string key, object value, Dictionary<string, object> dict)
 		{
@@ -60,8 +80,8 @@ namespace UnityEditor.XCodeEditor
 			}
 			else
 			{
-				dict[key] = HashtableToDictionary<string, object>((Hashtable)value);
-				plistModified = true;
+                dict[key] = formatPListObject(value);
+                plistModified = true;
 			}
 		}
 
