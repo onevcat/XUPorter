@@ -82,7 +82,7 @@ namespace UnityEditor.XCodeEditor
 			return true;
 		}
 
-		//CodeSignOnCopy
+		// CodeSignOnCopy
 		public bool AddCodeSignOnCopy()
 		{
 			if( !_data.ContainsKey( SETTINGS_KEY ) )
