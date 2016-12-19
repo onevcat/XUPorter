@@ -254,6 +254,7 @@ namespace PlistCS
         private static Dictionary<string, object> parseDictionary(XmlNode node)
         {
             XmlNodeList children = node.ChildNodes;
+			//检验了一下key/value是否成对，不成对抛出异常
             if (children.Count % 2 != 0)
             {
                 throw new DataMisalignedException("Dictionary elements must have an even number of child nodes");
@@ -307,6 +308,26 @@ namespace PlistCS
             }
             writer.WriteEndElement();
         }
+		private static void composeArrayList(ArrayList value, XmlWriter writer)
+		{
+			writer.WriteStartElement("array");
+			foreach (object obj in value)
+			{
+				compose(obj, writer);
+			}
+			writer.WriteEndElement();
+		}
+		private static void composeHashtable(Hashtable value, XmlWriter writer)
+		{
+			
+			writer.WriteStartElement("dict");
+			foreach (DictionaryEntry entry in value)
+			{
+				writer.WriteElementString("key", entry.Key.ToString());
+				compose(entry.Value, writer);
+			}
+			writer.WriteEndElement();
+		}
 
         private static object parse(XmlNode node)
         {
@@ -388,10 +409,19 @@ namespace PlistCS
             {
                 writer.WriteElementString(value.ToString().ToLower(), "");
             }
-            else
-            {
-                throw new Exception(String.Format("Value type '{0}' is unhandled", value.GetType().ToString()));
-            }
+			else if (value is ArrayList)
+			{
+				composeArrayList((ArrayList)value, writer);
+			}
+			else if (value is Hashtable)
+			{
+				composeHashtable((Hashtable)value, writer);
+			}
+			else
+			{
+				throw new Exception(String.Format("Value type '{0}' is unhandled", value.GetType().ToString()));
+			}
+
         }
 
         private static void writeDictionaryValues(Dictionary<string, object> dictionary, XmlWriter writer)

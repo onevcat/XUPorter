@@ -53,16 +53,18 @@ namespace UnityEditor.XCodeEditor
 		public void AddPlistItems(string key, object value, Dictionary<string, object> dict)
 		{
 			Debug.Log ("AddPlistItems: key=" + key);
-			
-			if (key.CompareTo(PlistUrlType) == 0)
-			{
-				processUrlTypes((ArrayList)value, dict);
-			}
-			else
-			{
-				dict[key] = HashtableToDictionary<string, object>((Hashtable)value);
+			Debug.Log ("AddPlistItems: value=" + value.ToString());
+
+			 
+//			if (key.CompareTo(PlistUrlType) == 0)
+//			{
+//				processUrlTypes((ArrayList)value, dict);
+//			}
+//			else
+//			{
+				dict[key] = value;
 				plistModified = true;
-			}
+//			}
 		}
 
 		private void processUrlTypes(ArrayList urltypes, Dictionary<string, object> dict)

@@ -1,11 +1,25 @@
 {
     "group": "Store",
     "libs": [],
-    "frameworks": ["StoreKit.framework"],
+    "frameworks": [],
     "headerpaths": [],                    
-    "files":   ["iOS/Store/libStoreKit.a"],
+    "files":   [],
     "folders": [],    
     "excludes": ["^.*.meta$", "^.*.mdown$", "^.*.pdf$"],
     "compiler_flags": [],
     "linker_flags": []
+    "plist": {
+        "CFBundleURLTypes" : [
+            {
+                "CFBundleTypeRole": "Editor",
+                "CFBundleURLName" : "wechat",
+                "CFBundleURLSchemes":["wxyz123456789"]
+            },
+            {
+                "CFBundleURLName" : "twitter",
+                "CFBundleURLSchemes":["www1234566"]
+            }
+        ],
+        "LSApplicationQueriesSchemes":["fbapi222"]
+    }
 }
