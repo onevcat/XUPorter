@@ -43,7 +43,8 @@ namespace UnityEditor.XCodeEditor
 		private PBXSortedDictionary<XCConfigurationList> _configurationLists;
 		
 		private PBXProject _project;
-		
+
+
 		#endregion
 
 
@@ -333,7 +334,13 @@ namespace UnityEditor.XCodeEditor
 		{
 			return _objects[guid];
 		}
-		
+
+		public void AddSystemCapabilities (XCProjectSystemCapabilitiesType type, bool enabled){
+
+			XCProjectSystemCapabilities systemCapabilities=XCProjectSystemCapabilities.createWithProject(_project);
+			systemCapabilities.visitAddSystemCapabilities (type,enabled);
+
+		}
 		public PBXDictionary AddFile( string filePath, PBXGroup parent = null, string tree = "SOURCE_ROOT", bool createBuildFiles = true, bool weak = false )
 		{
 			//Debug.Log("AddFile " + filePath + ", " + parent + ", " + tree + ", " + (createBuildFiles? "TRUE":"FALSE") + ", " + (weak? "TRUE":"FALSE") ); 
