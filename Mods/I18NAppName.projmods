@@ -1,0 +1,12 @@
+{
+    "group": "",
+    "i18n_name": [],
+    "libs": [],
+    "frameworks": [],
+    "headerpaths": [],                    
+    "files":   [],
+    "folders": [],    
+    "excludes": ["^.*.meta$", "^.*.mdown$", "^.*.pdf$"],
+    "compiler_flags": [],
+    "linker_flags": []
+}

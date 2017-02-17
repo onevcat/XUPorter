@@ -31,10 +31,13 @@ namespace UnityEditor.XCodeEditor
 		public void Process(Hashtable plist)
 		{
 			Dictionary<string, object> dict = (Dictionary<string, object>)PlistCS.Plist.readPlist(plistPath);
-			foreach( DictionaryEntry entry in plist)
-			{
-				this.AddPlistItems((string)entry.Key, entry.Value, dict);
-			}
+            if(plist != null)
+            {
+    			foreach( DictionaryEntry entry in plist)
+    			{
+    				this.AddPlistItems((string)entry.Key, entry.Value, dict);
+                }
+            }
 			if (plistModified)
 			{
 				PlistCS.Plist.writeXml(dict, plistPath);

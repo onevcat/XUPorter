@@ -38,6 +38,12 @@ namespace UnityEditor.XCodeEditor
 				return _libs;
 			}
 		}
+
+        public ArrayList i18n_name {
+            get {
+                return (ArrayList)_datastore["i18n_name"];
+            }
+        }
 		
 		public ArrayList frameworks {
 			get {

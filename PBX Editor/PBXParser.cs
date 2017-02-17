@@ -104,18 +104,26 @@ namespace UnityEditor.XCodeEditor
 
 				return null;
 			}
-			else if( entity is PBXNativeTarget )
-			{
-				PBXNativeTarget obj = (PBXNativeTarget)entity;
-				//Debug.LogWarning ("PBXNativeTarget " + guid + " " + obj.ToString());
-				
-				if( obj.data.ContainsKey( "name" ) ) {
-					//Debug.Log ("PBXNativeTarget " + (string)obj.data[ "name" ] + " " + guid);
-					return (string)obj.data[ "name" ];
-				}
+            else if( entity is PBXNativeTarget )
+            {
+                PBXNativeTarget obj = (PBXNativeTarget)entity;
+                //Debug.LogWarning ("PBXNativeTarget " + guid + " " + obj.ToString());
 
-				return null;
-			}
+                if( obj.data.ContainsKey( "name" ) ) {
+                    //Debug.Log ("PBXNativeTarget " + (string)obj.data[ "name" ] + " " + guid);
+                    return (string)obj.data[ "name" ];
+                }
+
+                return null;
+            }
+            else if( entity is PBXContainerItemProxy )
+            {
+                return "PBXContainerItemProxy";
+            }
+            else if( entity is PBXTargetDependency )
+            {
+                return "PBXTargetDependency";
+            }
 			else if( entity is XCBuildConfiguration )
 			{
 				XCBuildConfiguration obj = (XCBuildConfiguration)entity;
