@@ -17,6 +17,7 @@ After the Unity's building phase, OnPostProcessBuild in XCodePostProcess.cs will
 In these setting files, specify the fields using a json pattern.
 
 * group：The group name in Xcode to which files and folders will added by this projmods file
+* i18n_name：The application name internationalization, format for “language : application name”
 * libs：The name of libs should be added in Xcode Build Phases, libz.dylib for example. If you want to import a .a lib to Xcode, add it as a file(in "files")
 * frameworks：The name of framework should be added in Xcode Build Phases, Security.framework for example. If you want to add a third party framework, add it using a relative path to `files` section instead of here.
 * headerpaths：Header Search Paths in Build Setting of Xcode
@@ -36,6 +37,7 @@ One example, the following file will add all files in /iOS/KKKeychain to the Xco
 {
     "group": "KKKeychain",
     "libs": [],
+    "i18n_name": [ "en:English","zh-Hans:简体中文","zh-Hant:繁体中文”],
     "frameworks": ["Security.framework"],
     "headerpaths": [],
     "files":   [],

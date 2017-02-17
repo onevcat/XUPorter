@@ -30,7 +30,9 @@ namespace UnityEditor.XCodeEditor
 		private PBXSortedDictionary<PBXBuildFile> _buildFiles;
 		private PBXSortedDictionary<PBXGroup> _groups;
 		private PBXSortedDictionary<PBXFileReference> _fileReferences;
-		private PBXDictionary<PBXNativeTarget> _nativeTargets;
+        private PBXDictionary<PBXNativeTarget> _nativeTargets;
+        private PBXDictionary<PBXContainerItemProxy> _containerItemProxy;
+        private PBXDictionary<PBXTargetDependency> _targetDependency;
 		
 		private PBXDictionary<PBXFrameworksBuildPhase> _frameworkBuildPhases;
 		private PBXDictionary<PBXResourcesBuildPhase> _resourcesBuildPhases;
@@ -236,6 +238,24 @@ namespace UnityEditor.XCodeEditor
 			}
 		}
 
+        public PBXDictionary<PBXContainerItemProxy> containerItemProxy {
+            get {
+                if( _containerItemProxy == null ) {
+                    _containerItemProxy = new PBXDictionary<PBXContainerItemProxy>( _objects );
+                }
+                return _containerItemProxy;
+            }
+        }
+
+        public PBXDictionary<PBXTargetDependency> targetDependency {
+            get {
+                if( _targetDependency == null ) {
+                    _targetDependency = new PBXDictionary<PBXTargetDependency>( _objects );
+                }
+                return _targetDependency;
+            }
+        }
+
 		#endregion
 
 
@@ -334,7 +354,7 @@ namespace UnityEditor.XCodeEditor
 			return _objects[guid];
 		}
 		
-		public PBXDictionary AddFile( string filePath, PBXGroup parent = null, string tree = "SOURCE_ROOT", bool createBuildFiles = true, bool weak = false )
+        public PBXDictionary AddFile( string filePath, PBXGroup parent = null, string tree = "SOURCE_ROOT", bool createBuildFiles = true, bool weak = false, bool IsI18NName = false )
 		{
 			//Debug.Log("AddFile " + filePath + ", " + parent + ", " + tree + ", " + (createBuildFiles? "TRUE":"FALSE") + ", " + (weak? "TRUE":"FALSE") ); 
 			
@@ -372,7 +392,10 @@ namespace UnityEditor.XCodeEditor
 			if( parent == null ) {
 				parent = _rootGroup;
 			}
-			
+            if(IsI18NName)
+            {
+                filePath = absPath.Substring( absPath.LastIndexOf("/", absPath.IndexOf(".lproj")) + 1 );
+            }
 			//Check if there is already a file
 			PBXFileReference fileReference = GetFile( System.IO.Path.GetFileName( filePath ) );	
 			if( fileReference != null ) {
@@ -381,6 +404,7 @@ namespace UnityEditor.XCodeEditor
 			}
 			
 			fileReference = new PBXFileReference( filePath, (TreeEnum)System.Enum.Parse( typeof(TreeEnum), tree ) );
+
 			parent.AddChild( fileReference );
 			fileReferences.Add( fileReference );
 			results.Add( fileReference.guid, fileReference );
@@ -779,6 +803,45 @@ namespace UnityEditor.XCodeEditor
 			XCPlist plist = new XCPlist (plistPath);
 			plist.Process(mod.plist);
 
+            Debug.Log ("Adding I18N name...");
+            if(mod.i18n_name != null && mod.i18n_name.Count > 0){
+                Dictionary<string, object> dict = (Dictionary<string, object>)PlistCS.Plist.readPlist(plistPath);
+                if(dict.ContainsKey("CFBundleDisplayName"))
+                {
+                    dict.Remove("CFBundleDisplayName");
+                }
+                dict["LSHasLocalizedDisplayName"] = true;
+                PlistCS.Plist.writeXml(dict, plistPath);
+
+                var variant = new PBXVariantGroup("InfoPlist.strings", null, "GROUP");
+                // mark variants
+                variantGroups.Add(variant);
+                // add variant to project
+                _rootGroup.AddChild(variant);
+
+                foreach (string entry in mod.i18n_name)
+                {
+                    string[] filename = entry.Split( ':' );
+                    string folder = this.projectRootPath + "/" + filename[0] + ".lproj";
+                    if (!Directory.Exists(folder))
+                    {
+                        Directory.CreateDirectory(folder);
+                    }
+                    string filePath = folder + "/InfoPlist.strings";
+                    string content = "\"CFBundleDisplayName\" = \"" + filename[1] + "\";\n";
+                    content += "\"CFBundleName\" = \"" + filename[1] + "\";\n";
+                    File.WriteAllText(filePath, content);
+
+                    var result = AddFile( filePath, variant, "GROUP", true, false, true );
+                    foreach (var item in result.Keys)
+                    {
+                        PBXFileReference fileReference = (PBXFileReference)result[item];
+                        fileReference.Remove("name");
+                        fileReference.Add("name",filename[1]);
+                    }
+                }
+            }
+
 			this.Consolidate();
 		}
 		
@@ -793,7 +856,9 @@ namespace UnityEditor.XCodeEditor
 			consolidated.Append<PBXFileReference>( this.fileReferences );//sort!
 			consolidated.Append<PBXFrameworksBuildPhase>( this.frameworkBuildPhases );
 			consolidated.Append<PBXGroup>( this.groups );//sort!
-			consolidated.Append<PBXNativeTarget>( this.nativeTargets );
+            consolidated.Append<PBXNativeTarget>( this.nativeTargets );
+            consolidated.Append<PBXContainerItemProxy>( this.containerItemProxy );
+            consolidated.Append<PBXTargetDependency>( this.targetDependency );
 			consolidated.Add( project.guid, project.data );//TODO this should be named PBXProject?
 			consolidated.Append<PBXResourcesBuildPhase>( this.resourcesBuildPhases );
 			consolidated.Append<PBXShellScriptBuildPhase>( this.shellScriptBuildPhases );
