@@ -581,7 +581,7 @@ namespace UnityEditor.XCodeEditor
 
 			foreach( string directory in Directory.GetDirectories( folderPath ) ) {
 				Debug.Log( "DIR: " + directory );
-				if( directory.EndsWith( ".bundle" ) ) {
+				if( directory.EndsWith( ".bundle" ) || directory.EndsWith( ".xcassets" ) ) {
 					// Treat it like a file and copy even if not recursive
 					// TODO also for .xcdatamodeld?
 					Debug.LogWarning( "This is a special folder: " + directory );
