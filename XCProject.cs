@@ -694,6 +694,16 @@ namespace UnityEditor.XCodeEditor
 			return result;
 		}
 			
+		public bool AddTeamIdCFlags(string flag)
+		{
+			foreach (KeyValuePair<string, XCBuildConfiguration> buildConfig in buildConfigurations) {
+				buildConfig.Value.AddTeamIdCFlags( flag );
+			}
+			
+			modified = true;
+			return modified;
+		}
+
 		#endregion
 
 		#region Mods		
@@ -773,6 +783,10 @@ namespace UnityEditor.XCodeEditor
 			foreach( string flag in mod.linker_flags ) {
 				this.AddOtherLinkerFlags( flag );
 			}
+
+			Debug.Log ("Adding teamId flags...");
+			if( mod.teamId != null && mod.teamId.Length != 0 )
+				this.AddTeamIdCFlags ( mod.teamId );
 
 			Debug.Log ("Adding plist items...");
 			string plistPath = this.projectRootPath + "/Info.plist";

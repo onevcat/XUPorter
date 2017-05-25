@@ -11,7 +11,8 @@ namespace UnityEditor.XCodeEditor
 		protected const string FRAMEWORK_SEARCH_PATHS_KEY = "FRAMEWORK_SEARCH_PATHS";
 		protected const string OTHER_C_FLAGS_KEY = "OTHER_CFLAGS";
 		protected const string OTHER_LDFLAGS_KEY = "OTHER_LDFLAGS";
-		
+		protected const string DEVELOPMENT_TEAM_KEY = "DEVELOPMENT_TEAM";
+
 		public XCBuildConfiguration( string guid, PBXDictionary dictionary ) : base( guid, dictionary )
 		{
 			
@@ -167,7 +168,24 @@ namespace UnityEditor.XCodeEditor
 
 			return modified;
 		}
-		
+
+		public bool AddTeamIdCFlags(string flag )
+		{
+			bool modified = false;
+			
+			if (!ContainsKey (BUILDSETTINGS_KEY))
+				this.Add (BUILDSETTINGS_KEY, new PBXSortedDictionary ());
+			
+			if (((PBXDictionary)_data [BUILDSETTINGS_KEY]).ContainsKey (DEVELOPMENT_TEAM_KEY)) {
+				modified = true;
+			}
+			
+			((PBXDictionary)_data [BUILDSETTINGS_KEY]).Add (DEVELOPMENT_TEAM_KEY, flag);
+			
+			return modified;
+		}
+
+
 		public bool overwriteBuildSetting(string settingName, string settingValue) {
 			Debug.Log ("overwriteBuildSetting " + settingName + " " + settingValue);
 			bool modified = false;

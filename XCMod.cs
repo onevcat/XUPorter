@@ -1,6 +1,7 @@
 using UnityEngine;
 using System.Collections;
 using System.IO;
+using System;
 
 namespace UnityEditor.XCodeEditor 
 {
@@ -84,6 +85,12 @@ namespace UnityEditor.XCodeEditor
 		public ArrayList embed_binaries {
 			get {
 				return (ArrayList)_datastore["embed_binaries"];
+			}
+		}
+
+		public string teamId {
+			get {
+				return Convert.ToString(_datastore["team_id"]);
 			}
 		}
 
