@@ -58,11 +58,16 @@ namespace UnityEditor.XCodeEditor
 			{
 				processUrlTypes((ArrayList)value, dict);
 			}
-			else
+			else if ( value is Hashtable)
 			{
 				dict[key] = HashtableToDictionary<string, object>((Hashtable)value);
 				plistModified = true;
 			}
+            else
+            {
+                dict[key] = value;
+                plistModified = true;
+            }
 		}
 
 		private void processUrlTypes(ArrayList urltypes, Dictionary<string, object> dict)

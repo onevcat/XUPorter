@@ -82,7 +82,12 @@ namespace UnityEditor.XCodeEditor
 			}
 			
 			projectFileInfo = new FileInfo( Path.Combine( this.filePath, "project.pbxproj" ) );
-			string contents = projectFileInfo.OpenText().ReadToEnd();
+            //string contents = projectFileInfo.OpenText().ReadToEnd;
+            string contents;
+            using( StreamReader r = projectFileInfo.OpenText() )
+            {
+                contents = r.ReadToEnd();
+            }
 			
 			PBXParser parser = new PBXParser();
 			_datastore = parser.Decode( contents );
@@ -850,7 +855,7 @@ namespace UnityEditor.XCodeEditor
 			string projectPath = Path.Combine( this.filePath, "project.pbxproj" );
 
 			// Delete old project file, in case of an IOException 'Sharing violation on path Error'
-			DeleteExisting(projectPath);
+            DeleteExisting(projectPath);
 
 			// Parse result object directly into file
 			CreateNewProject(result,projectPath);
