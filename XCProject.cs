@@ -753,7 +753,11 @@ namespace UnityEditor.XCodeEditor
 			
 			Debug.Log( "Adding folders..." );
 			foreach( string folderPath in mod.folders ) {
-				string absoluteFolderPath = System.IO.Path.Combine( Application.dataPath, folderPath );
+                string absoluteFolderPath = System.IO.Path.Combine(Application.dataPath, folderPath);
+                if ( !Directory.Exists(folderPath) )
+                {
+                    absoluteFolderPath = System.IO.Path.Combine(mod.path, folderPath);
+                }
 				Debug.Log ("Adding folder " + absoluteFolderPath);
 				this.AddFolder( absoluteFolderPath, modGroup, (string[])mod.excludes.ToArray( typeof(string) ) );
 			}
@@ -779,13 +783,17 @@ namespace UnityEditor.XCodeEditor
 				this.AddOtherLinkerFlags( flag );
 			}
 
-			Debug.Log ("Adding plist items...");
-			string plistPath = this.projectRootPath + "/Info.plist";
-			XCPlist plist = new XCPlist (plistPath);
-			plist.Process(mod.plist);
-
+            this.ProcessPList(mod.plist);
 			this.Consolidate();
 		}
+
+        public void ProcessPList( Hashtable  items )
+        {
+            Debug.Log("Adding plist items...");
+            string plistPath = this.projectRootPath + "/Info.plist";
+            XCPlist plist = new XCPlist(plistPath);
+            plist.Process(items);
+        }
 		
 		#endregion
 
