@@ -4,6 +4,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Text.RegularExpressions;
+using System;
 
 namespace UnityEditor.XCodeEditor
 {
@@ -783,7 +784,23 @@ namespace UnityEditor.XCodeEditor
 				this.AddOtherLinkerFlags( flag );
 			}
 
+            Debug.Log("Adding settings ...");
+            foreach (DictionaryEntry kv in mod.settings)
+            {
+                string k = (string)kv.Key;
+                string v = (string)kv.Value;
+                if ( k == null || k.Trim().Length == 0 || null == v)
+                {
+                    Debug.Log( string.Format( "setting item error(k:{0} v:{1} mod:{2})", 
+                        k == null ? "[null]" : k, v == null ? "[null]" :v, 
+                        mod.group ) );
+                    continue;
+                }
+
+                this.overwriteBuildSetting(k.Trim(), v.Trim());
+            }
             this.ProcessPList(mod.plist);
+            this.ProcessTextModify(mod.textModify);
 			this.Consolidate();
 		}
 
@@ -793,6 +810,73 @@ namespace UnityEditor.XCodeEditor
             string plistPath = this.projectRootPath + "/Info.plist";
             XCPlist plist = new XCPlist(plistPath);
             plist.Process(items);
+        }
+
+        public void ProcessTextModify( Hashtable items )
+        {
+            foreach (DictionaryEntry kv in items)
+            {
+                string k = (string)kv.Key;
+                Hashtable v = (Hashtable)kv.Value;
+                if (k == null || k.Trim().Length == 0 || null == v)
+                {
+                    Debug.Log(string.Format("textmodify item error(k:{0})",
+                        k == null ? "[null]" : k,
+                        v == null ? 0 : v.Count) );
+                    continue;
+                }
+
+                string filePath = Path.Combine(this.projectRootPath, k);
+                if ( File.Exists( filePath ) )
+                {
+                    XClass xclass = new XClass(filePath);
+
+                    ArrayList beforeList = (ArrayList)v["before"];
+                    ProcessWriteText("before", beforeList, xclass.WriteAbove);
+
+                    ArrayList afterList = (ArrayList)v["after"];
+                    ProcessWriteText("after", afterList, xclass.WriteBelow);
+
+                    ArrayList replaceList = (ArrayList)v["replace"];
+                    ProcessWriteText("replace", replaceList, xclass.Replace);
+
+                    string addText = (string)v["add"];
+                    if ( null != addText )
+                    {
+                        xclass.Add(addText);
+                    }
+                }
+                else
+                {
+                    Debug.LogError( string.Format("text modify file '{0}' not found!!!", filePath) );
+                }
+            }
+        }
+
+        private void ProcessWriteText( string sectionName, ArrayList modifyList, Action<string, string> writeAction )
+        {
+            Debug.Log(string.Format("Process text modify {0} section(size:{1} count:{2})",
+                        sectionName,
+                        null != modifyList ? modifyList.Count : 0,
+                        null != modifyList ? modifyList.Count / 2 : 0));
+
+            if (null != modifyList)
+            {
+                int count = modifyList.Count;
+                for (int i = 0; i < count - 1; i += 2)
+                {
+                    string textMark = (string)modifyList[i];
+                    string textModify = (string)modifyList[i + 1];
+                    if ( null != textMark && null != textModify )
+                    {
+                        writeAction(textMark, textModify);
+                    }
+                    else
+                    {
+                        Debug.LogError(string.Format("Process text modify {0} section error, mark or text is null", sectionName));
+                    }
+                }
+            }
         }
 		
 		#endregion
