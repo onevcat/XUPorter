@@ -125,11 +125,14 @@ namespace UnityEditor.XCodeEditor
 			
 			foreach(Dictionary<string, object> dict in bundleUrlTypes)
 			{
-				string _n = (string)dict[BundleUrlName];
-				if (string.Compare(_n, name) == 0)
-				{
-					return dict;
-				}
+                if (dict.ContainsKey(BundleUrlName))
+                {
+                    string _n = (string)dict[BundleUrlName];
+                    if (string.Compare(_n, name) == 0)
+                    {
+                        return dict;
+                    }
+                }
 			}
 			return null;
 		}
