@@ -380,8 +380,10 @@ namespace UnityEditor.XCodeEditor
 			}
 			
 			//Check if there is already a file
-			PBXFileReference fileReference = GetFile( System.IO.Path.GetFileName( filePath ) );	
-			if( fileReference != null ) {
+			//PBXFileReference fileReference = GetFile( System.IO.Path.GetFileName( filePath ) );
+            PBXFileReference fileReference = GetFileByPath(filePath);
+            if ( fileReference != null )
+            {
 				Debug.Log("File already exists: " + filePath); //not a warning, because this is normal for most builds!
 				return null;
 			}
@@ -504,8 +506,9 @@ namespace UnityEditor.XCodeEditor
 			Debug.Log( "Add Embed Framework: " + fileName );
 
 			//Check if there is already a file
-			PBXFileReference fileReference = GetFile( System.IO.Path.GetFileName( fileName ) );	
-			if( fileReference == null ) {
+			//PBXFileReference fileReference = GetFile( System.IO.Path.GetFileName( fileName ) );	
+            PBXFileReference fileReference = GetFileByPath(fileName);	
+			if( fileReference != null ) {
 				Debug.Log("Embed Framework must added already: " + fileName);
 				return;
 			}
@@ -675,6 +678,25 @@ namespace UnityEditor.XCodeEditor
 			return null;
 		}
 		
+
+        public PBXFileReference GetFileByPath( string path )
+        {
+            if (string.IsNullOrEmpty(path))
+            {
+                return null;
+            }
+
+            foreach (KeyValuePair<string, PBXFileReference> current in fileReferences)
+            {
+                if (!string.IsNullOrEmpty(current.Value.path) && current.Value.path.CompareTo(path) == 0)
+                {
+                    return current.Value;
+                }
+            }
+
+            return null;
+        }
+
 		public PBXGroup GetGroup( string name, string path = null, PBXGroup parent = null )
 		{
 			if( string.IsNullOrEmpty( name ) )
