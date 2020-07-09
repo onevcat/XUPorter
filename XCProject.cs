@@ -508,7 +508,7 @@ namespace UnityEditor.XCodeEditor
 			//Check if there is already a file
 			//PBXFileReference fileReference = GetFile( System.IO.Path.GetFileName( fileName ) );	
             PBXFileReference fileReference = GetFileByPath(fileName);	
-			if( fileReference != null ) {
+			if( fileReference == null ) {
 				Debug.Log("Embed Framework must added already: " + fileName);
 				return;
 			}
@@ -765,8 +765,9 @@ namespace UnityEditor.XCodeEditor
 			if (mod.embed_binaries != null)
 			{
 				//1. Add LD_RUNPATH_SEARCH_PATHS for embed framework
-				this.overwriteBuildSetting("LD_RUNPATH_SEARCH_PATHS", "$(inherited) @executable_path/Frameworks", "Release");
-				this.overwriteBuildSetting("LD_RUNPATH_SEARCH_PATHS", "$(inherited) @executable_path/Frameworks", "Debug");
+                // CONFLIC TO POD METHOD 
+				// this.overwriteBuildSetting("LD_RUNPATH_SEARCH_PATHS", "$(inherited) @executable_path/Frameworks", "Release");
+                // this.overwriteBuildSetting("LD_RUNPATH_SEARCH_PATHS", "$(inherited) @executable_path/Frameworks", "Debug");
 
 				foreach( string binary in mod.embed_binaries ) {
 					string absoluteFilePath = System.IO.Path.Combine( mod.path, binary );
