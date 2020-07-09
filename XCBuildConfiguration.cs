@@ -176,25 +176,48 @@ namespace UnityEditor.XCodeEditor
 				Debug.Log ("creating key " + BUILDSETTINGS_KEY);
 				this.Add( BUILDSETTINGS_KEY, new PBXSortedDictionary() );
 			}
-				
-			if( !((PBXDictionary)_data[BUILDSETTINGS_KEY]).ContainsKey( settingName ) ) {
-				Debug.Log("adding key " + settingName);
-				 ((PBXDictionary)_data[BUILDSETTINGS_KEY]).Add( settingName, new PBXList() );
-			}
-			else if ( ((PBXDictionary)_data[BUILDSETTINGS_KEY])[ settingName ] is string ) {
-				//Debug.Log("key is string:" + settingName);
-				//string tempString = (string)((PBXDictionary)_data[BUILDSETTINGS_KEY])[settingName];
-				((PBXDictionary)_data[BUILDSETTINGS_KEY])[ settingName ] = new PBXList();
-				//((PBXList)((PBXDictionary)_data[BUILDSETTINGS_KEY])[settingName]).Add( tempString );
-			}
+
+
+            //fix string type show is array 
+            /* 
+            if( !((PBXDictionary)_data[BUILDSETTINGS_KEY]).ContainsKey( settingName ) ) {
+                Debug.Log("adding key " + settingName);
+                 ((PBXDictionary)_data[BUILDSETTINGS_KEY]).Add( settingName, new PBXList() );
+            }
+
+            else if ( ((PBXDictionary)_data[BUILDSETTINGS_KEY])[ settingName ] is string ) {
+                //Debug.Log("key is string:" + settingName);
+                //string tempString = (string)((PBXDictionary)_data[BUILDSETTINGS_KEY])[settingName];
+                ((PBXDictionary)_data[BUILDSETTINGS_KEY])[ settingName ] = new PBXList();
+                //((PBXList)((PBXDictionary)_data[BUILDSETTINGS_KEY])[settingName]).Add( tempString );
+            }
 			
-			if( !((PBXList)((PBXDictionary)_data[BUILDSETTINGS_KEY])[settingName]).Contains( settingValue ) ) {
-				Debug.Log("setting " + settingName + " to " + settingValue);
-				((PBXList)((PBXDictionary)_data[BUILDSETTINGS_KEY])[settingName]).Add( settingValue );
-				modified = true;
-				}
-			
-			return modified;
+            if( !((PBXList)((PBXDictionary)_data[BUILDSETTINGS_KEY])[settingName]).Contains( settingValue ) ) {
+                Debug.Log("setting " + settingName + " to " + settingValue);
+                ((PBXList)((PBXDictionary)_data[BUILDSETTINGS_KEY])[settingName]).Add( settingValue );
+                modified = true;
+                }
+            */
+            if (!((PBXDictionary)_data[BUILDSETTINGS_KEY]).ContainsKey(settingName))
+            {
+                Debug.Log("adding key " + settingName);
+                ((PBXDictionary)_data[BUILDSETTINGS_KEY]).Add(settingName, new PBXList());
+                ((PBXList)((PBXDictionary)_data[BUILDSETTINGS_KEY])[settingName]).Add(settingValue);
+                 modified = true;
+            }
+            else if (((PBXDictionary)_data[BUILDSETTINGS_KEY])[settingName] is string)
+            {
+                ((PBXDictionary)_data[BUILDSETTINGS_KEY])[settingName] = settingValue;
+                modified = true;
+            }
+            else if (!((PBXList)((PBXDictionary)_data[BUILDSETTINGS_KEY])[settingName]).Contains(settingValue))
+            {
+                Debug.Log("setting " + settingName + " to " + settingValue);
+                ((PBXList)((PBXDictionary)_data[BUILDSETTINGS_KEY])[settingName]).Add(settingValue);
+                modified = true;
+            }
+
+            return modified;
 		}			
 	}
 }

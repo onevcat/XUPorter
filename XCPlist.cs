@@ -58,11 +58,16 @@ namespace UnityEditor.XCodeEditor
 			{
 				processUrlTypes((ArrayList)value, dict);
 			}
-			else
+			else if ( value is Hashtable)
 			{
 				dict[key] = HashtableToDictionary<string, object>((Hashtable)value);
 				plistModified = true;
 			}
+            else
+            {
+                dict[key] = value;
+                plistModified = true;
+            }
 		}
 
 		private void processUrlTypes(ArrayList urltypes, Dictionary<string, object> dict)
@@ -120,11 +125,14 @@ namespace UnityEditor.XCodeEditor
 			
 			foreach(Dictionary<string, object> dict in bundleUrlTypes)
 			{
-				string _n = (string)dict[BundleUrlName];
-				if (string.Compare(_n, name) == 0)
-				{
-					return dict;
-				}
+                if (dict.ContainsKey(BundleUrlName))
+                {
+                    string _n = (string)dict[BundleUrlName];
+                    if (string.Compare(_n, name) == 0)
+                    {
+                        return dict;
+                    }
+                }
 			}
 			return null;
 		}

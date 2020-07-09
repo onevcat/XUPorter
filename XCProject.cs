@@ -4,6 +4,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Text.RegularExpressions;
+using System;
 
 namespace UnityEditor.XCodeEditor
 {
@@ -82,7 +83,12 @@ namespace UnityEditor.XCodeEditor
 			}
 			
 			projectFileInfo = new FileInfo( Path.Combine( this.filePath, "project.pbxproj" ) );
-			string contents = projectFileInfo.OpenText().ReadToEnd();
+            //string contents = projectFileInfo.OpenText().ReadToEnd;
+            string contents;
+            using( StreamReader r = projectFileInfo.OpenText() )
+            {
+                contents = r.ReadToEnd();
+            }
 			
 			PBXParser parser = new PBXParser();
 			_datastore = parser.Decode( contents );
@@ -374,8 +380,10 @@ namespace UnityEditor.XCodeEditor
 			}
 			
 			//Check if there is already a file
-			PBXFileReference fileReference = GetFile( System.IO.Path.GetFileName( filePath ) );	
-			if( fileReference != null ) {
+			//PBXFileReference fileReference = GetFile( System.IO.Path.GetFileName( filePath ) );
+            PBXFileReference fileReference = GetFileByPath(filePath);
+            if ( fileReference != null )
+            {
 				Debug.Log("File already exists: " + filePath); //not a warning, because this is normal for most builds!
 				return null;
 			}
@@ -498,7 +506,8 @@ namespace UnityEditor.XCodeEditor
 			Debug.Log( "Add Embed Framework: " + fileName );
 
 			//Check if there is already a file
-			PBXFileReference fileReference = GetFile( System.IO.Path.GetFileName( fileName ) );	
+			//PBXFileReference fileReference = GetFile( System.IO.Path.GetFileName( fileName ) );	
+            PBXFileReference fileReference = GetFileByPath(fileName);	
 			if( fileReference == null ) {
 				Debug.Log("Embed Framework must added already: " + fileName);
 				return;
@@ -669,6 +678,25 @@ namespace UnityEditor.XCodeEditor
 			return null;
 		}
 		
+
+        public PBXFileReference GetFileByPath( string path )
+        {
+            if (string.IsNullOrEmpty(path))
+            {
+                return null;
+            }
+
+            foreach (KeyValuePair<string, PBXFileReference> current in fileReferences)
+            {
+                if (!string.IsNullOrEmpty(current.Value.path) && current.Value.path.CompareTo(path) == 0)
+                {
+                    return current.Value;
+                }
+            }
+
+            return null;
+        }
+
 		public PBXGroup GetGroup( string name, string path = null, PBXGroup parent = null )
 		{
 			if( string.IsNullOrEmpty( name ) )
@@ -737,8 +765,9 @@ namespace UnityEditor.XCodeEditor
 			if (mod.embed_binaries != null)
 			{
 				//1. Add LD_RUNPATH_SEARCH_PATHS for embed framework
-				this.overwriteBuildSetting("LD_RUNPATH_SEARCH_PATHS", "$(inherited) @executable_path/Frameworks", "Release");
-				this.overwriteBuildSetting("LD_RUNPATH_SEARCH_PATHS", "$(inherited) @executable_path/Frameworks", "Debug");
+                // CONFLIC TO POD METHOD 
+				// this.overwriteBuildSetting("LD_RUNPATH_SEARCH_PATHS", "$(inherited) @executable_path/Frameworks", "Release");
+                // this.overwriteBuildSetting("LD_RUNPATH_SEARCH_PATHS", "$(inherited) @executable_path/Frameworks", "Debug");
 
 				foreach( string binary in mod.embed_binaries ) {
 					string absoluteFilePath = System.IO.Path.Combine( mod.path, binary );
@@ -748,7 +777,11 @@ namespace UnityEditor.XCodeEditor
 			
 			Debug.Log( "Adding folders..." );
 			foreach( string folderPath in mod.folders ) {
-				string absoluteFolderPath = System.IO.Path.Combine( Application.dataPath, folderPath );
+                string absoluteFolderPath = System.IO.Path.Combine(Application.dataPath, folderPath);
+                if ( !Directory.Exists(folderPath) )
+                {
+                    absoluteFolderPath = System.IO.Path.Combine(mod.path, folderPath);
+                }
 				Debug.Log ("Adding folder " + absoluteFolderPath);
 				this.AddFolder( absoluteFolderPath, modGroup, (string[])mod.excludes.ToArray( typeof(string) ) );
 			}
@@ -774,13 +807,100 @@ namespace UnityEditor.XCodeEditor
 				this.AddOtherLinkerFlags( flag );
 			}
 
-			Debug.Log ("Adding plist items...");
-			string plistPath = this.projectRootPath + "/Info.plist";
-			XCPlist plist = new XCPlist (plistPath);
-			plist.Process(mod.plist);
+            Debug.Log("Adding settings ...");
+            foreach (DictionaryEntry kv in mod.settings)
+            {
+                string k = (string)kv.Key;
+                string v = (string)kv.Value;
+                if ( k == null || k.Trim().Length == 0 || null == v)
+                {
+                    Debug.Log( string.Format( "setting item error(k:{0} v:{1} mod:{2})", 
+                        k == null ? "[null]" : k, v == null ? "[null]" :v, 
+                        mod.group ) );
+                    continue;
+                }
 
+                this.overwriteBuildSetting(k.Trim(), v.Trim());
+            }
+            this.ProcessPList(mod.plist);
+            this.ProcessTextModify(mod.textModify);
 			this.Consolidate();
 		}
+
+        public void ProcessPList( Hashtable  items )
+        {
+            Debug.Log("Adding plist items...");
+            string plistPath = this.projectRootPath + "/Info.plist";
+            XCPlist plist = new XCPlist(plistPath);
+            plist.Process(items);
+        }
+
+        public void ProcessTextModify( Hashtable items )
+        {
+            foreach (DictionaryEntry kv in items)
+            {
+                string k = (string)kv.Key;
+                Hashtable v = (Hashtable)kv.Value;
+                if (k == null || k.Trim().Length == 0 || null == v)
+                {
+                    Debug.Log(string.Format("textmodify item error(k:{0})",
+                        k == null ? "[null]" : k,
+                        v == null ? 0 : v.Count) );
+                    continue;
+                }
+
+                string filePath = Path.Combine(this.projectRootPath, k);
+                if ( File.Exists( filePath ) )
+                {
+                    XClass xclass = new XClass(filePath);
+
+                    ArrayList beforeList = (ArrayList)v["before"];
+                    ProcessWriteText("before", beforeList, xclass.WriteAbove);
+
+                    ArrayList afterList = (ArrayList)v["after"];
+                    ProcessWriteText("after", afterList, xclass.WriteBelow);
+
+                    ArrayList replaceList = (ArrayList)v["replace"];
+                    ProcessWriteText("replace", replaceList, xclass.Replace);
+
+                    string addText = (string)v["add"];
+                    if ( null != addText )
+                    {
+                        xclass.Add(addText);
+                    }
+                }
+                else
+                {
+                    Debug.LogError( string.Format("text modify file '{0}' not found!!!", filePath) );
+                }
+            }
+        }
+
+        private void ProcessWriteText( string sectionName, ArrayList modifyList, Action<string, string> writeAction )
+        {
+            Debug.Log(string.Format("Process text modify {0} section(size:{1} count:{2})",
+                        sectionName,
+                        null != modifyList ? modifyList.Count : 0,
+                        null != modifyList ? modifyList.Count / 2 : 0));
+
+            if (null != modifyList)
+            {
+                int count = modifyList.Count;
+                for (int i = 0; i < count - 1; i += 2)
+                {
+                    string textMark = (string)modifyList[i];
+                    string textModify = (string)modifyList[i + 1];
+                    if ( null != textMark && null != textModify )
+                    {
+                        writeAction(textMark, textModify);
+                    }
+                    else
+                    {
+                        Debug.LogError(string.Format("Process text modify {0} section error, mark or text is null", sectionName));
+                    }
+                }
+            }
+        }
 		
 		#endregion
 
@@ -850,7 +970,7 @@ namespace UnityEditor.XCodeEditor
 			string projectPath = Path.Combine( this.filePath, "project.pbxproj" );
 
 			// Delete old project file, in case of an IOException 'Sharing violation on path Error'
-			DeleteExisting(projectPath);
+            DeleteExisting(projectPath);
 
 			// Parse result object directly into file
 			CreateNewProject(result,projectPath);

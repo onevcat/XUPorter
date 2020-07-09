@@ -22,7 +22,13 @@ namespace UnityEditor.XCodeEditor
 		
 		public ArrayList patches {
 			get {
-				return (ArrayList)_datastore["patches"];
+                //return (ArrayList)_datastore["patches"];
+                ArrayList p_ = (ArrayList)_datastore["patches"];
+                if ( null == p_ )
+                {
+                    return new ArrayList();
+                }
+                return p_;
 			}
 		}
 		
@@ -41,57 +47,138 @@ namespace UnityEditor.XCodeEditor
 		
 		public ArrayList frameworks {
 			get {
-				return (ArrayList)_datastore["frameworks"];
+				//return (ArrayList)_datastore["frameworks"];
+                ArrayList p_ = (ArrayList)_datastore["frameworks"];
+                if (null == p_)
+                {
+                    return new ArrayList();
+                }
+                return p_;
 			}
 		}
 		
 		public ArrayList headerpaths {
 			get {
-				return (ArrayList)_datastore["headerpaths"];
+				//return (ArrayList)_datastore["headerpaths"];
+                ArrayList p_ = (ArrayList)_datastore["headerpaths"];
+                if (null == p_)
+                {
+                    return new ArrayList();
+                }
+                return p_;
 			}
 		}
 		
 		public ArrayList files {
 			get {
-				return (ArrayList)_datastore["files"];
+				//return (ArrayList)_datastore["files"];
+                ArrayList p_ = (ArrayList)_datastore["files"];
+                if (null == p_)
+                {
+                    return new ArrayList();
+                }
+                return p_;
 			}
 		}
 		
 		public ArrayList folders {
 			get {
-				return (ArrayList)_datastore["folders"];
+				//return (ArrayList)_datastore["folders"];
+                ArrayList p_ = (ArrayList)_datastore["folders"];
+                if (null == p_)
+                {
+                    return new ArrayList();
+                }
+                return p_;
 			}
 		}
 		
 		public ArrayList excludes {
 			get {
-				return (ArrayList)_datastore["excludes"];
+				//return (ArrayList)_datastore["excludes"];
+                ArrayList p_ = (ArrayList)_datastore["excludes"];
+                if (null == p_)
+                {
+                    return new ArrayList();
+                }
+                return p_;
 			}
 		}
 
 		public ArrayList compiler_flags {
 			get {
-				return (ArrayList)_datastore["compiler_flags"];
+				//return (ArrayList)_datastore["compiler_flags"];
+                ArrayList p_ = (ArrayList)_datastore["compiler_flags"];
+                if (null == p_)
+                {
+                    return new ArrayList();
+                }
+                return p_;
 			}
 		}
 
 		public ArrayList linker_flags {
 			get {
-				return (ArrayList)_datastore["linker_flags"];
+				//return (ArrayList)_datastore["linker_flags"];
+                ArrayList p_ = (ArrayList)_datastore["linker_flags"];
+                if (null == p_)
+                {
+                    return new ArrayList();
+                }
+                return p_;
 			}
 		}
 
 		public ArrayList embed_binaries {
 			get {
-				return (ArrayList)_datastore["embed_binaries"];
+				//return (ArrayList)_datastore["embed_binaries"];
+                ArrayList p_ = (ArrayList)_datastore["embed_binaries"];
+                if (null == p_)
+                {
+                    return new ArrayList();
+                }
+                return p_;
 			}
 		}
 
 		public Hashtable plist {
 			get {
-				return (Hashtable)_datastore["plist"];
+				//return (Hashtable)_datastore["plist"];
+                Hashtable p_ = (Hashtable)_datastore["plist"];
+                if (null == p_)
+                {
+                    return new Hashtable();
+                }
+                return p_;
 			}
 		}
+
+        public Hashtable settings
+        {
+            get {
+                //return (Hashtable)_datastore["settings"];
+                Hashtable p_ = (Hashtable)_datastore["settings"];
+                if (null == p_)
+                {
+                    return new Hashtable();
+                }
+                return p_;
+            }
+        }
+
+        public Hashtable textModify
+        {
+            get
+            {
+                //return (Hashtable)_datastore["textModify"];
+                Hashtable p_ = (Hashtable)_datastore["textModify"];
+                if (null == p_)
+                {
+                    return new Hashtable();
+                }
+                return p_;
+            }
+        }
 		
 		public XCMod( string filename )
 		{	
